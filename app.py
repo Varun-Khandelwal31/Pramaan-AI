@@ -19,13 +19,27 @@ from chain import calculate_content_hash, calculate_record_hash, verify_case_cha
 
 app = FastAPI(title="PRAMAAN Medico-Legal Evidence Platform")
 
-# Mount static directory
-STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Resolve STATIC_DIR safely for local and Vercel serverless
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+if not os.path.exists(STATIC_DIR):
+    for candidate in [os.path.join(os.getcwd(), "static"), "/var/task/static"]:
+        if os.path.exists(candidate):
+            STATIC_DIR = candidate
+            break
+
 os.makedirs(STATIC_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# Mount Jinja2 templates
-TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
+# Resolve TEMPLATES_DIR safely for local and Vercel serverless
+TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
+if not os.path.exists(TEMPLATES_DIR):
+    for candidate in [os.path.join(os.getcwd(), "templates"), "/var/task/templates"]:
+        if os.path.exists(candidate):
+            TEMPLATES_DIR = candidate
+            break
+
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 @app.on_event("startup")
