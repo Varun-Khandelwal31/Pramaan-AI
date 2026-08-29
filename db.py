@@ -3,11 +3,18 @@ import os
 from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any, Optional, Tuple
 
-if os.environ.get("VERCEL") or os.path.exists("/tmp"):
-    # If running in Vercel serverless environment, use /tmp which is writable
-    DB_PATH = "/tmp/pramaan.db" if os.environ.get("VERCEL") else os.path.join(os.path.dirname(os.path.abspath(__file__)), "pramaan.db")
+PROJECT_DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pramaan.db")
+
+if os.environ.get("VERCEL"):
+    import shutil
+    DB_PATH = "/tmp/pramaan.db"
+    if not os.path.exists(DB_PATH) and os.path.exists(PROJECT_DB):
+        try:
+            shutil.copyfile(PROJECT_DB, DB_PATH)
+        except Exception:
+            pass
 else:
-    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pramaan.db")
+    DB_PATH = PROJECT_DB
 
 EXPECTED_DOCS_BY_TYPE = {
     "Road Accident": ["MLC Entry", "Injury Certificate", "X-Ray Report", "Final Opinion"],
@@ -15,7 +22,20 @@ EXPECTED_DOCS_BY_TYPE = {
     "POCSO Case": ["MLC Entry", "Medical Examination", "Forensic Report", "Counsellor Report"]
 }
 
+_db_initialized = False
+
 def get_db():
+    global _db_initialized
+    if not os.path.exists(DB_PATH) or os.path.getsize(DB_PATH) == 0:
+        init_db()
+        try:
+            import seed
+            seed.seed_database(force=True)
+        except Exception:
+            pass
+    elif not _db_initialized:
+        init_db()
+        _db_initialized = True
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
