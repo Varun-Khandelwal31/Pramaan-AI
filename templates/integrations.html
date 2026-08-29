@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+
+{% block title %}National Government Integrations · Future Scope · PRAMAAN{% endblock %}
+{% block kicker %}National Interoperability & Government Architecture · Phase 2 Scope{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8">
+
+  <!-- Header Banner -->
+  <div class="bg-gradient-to-r from-navy to-[#131D33] border-2 border-[#C9A227] rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+    <div class="absolute right-0 top-0 translate-x-12 -translate-y-6 opacity-10 pointer-events-none">
+      <svg class="w-96 h-96" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+      </svg>
+    </div>
+
+    <div class="relative z-10 max-w-3xl space-y-3">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#C9A227]/20 border border-[#C9A227] text-[#E7C766] text-xs font-bold uppercase tracking-wider">
+        <span class="w-2 h-2 rounded-full bg-[#E7C766] animate-pulse"></span>
+        National Rollout Roadmap · Inter-Agency Architecture
+      </div>
+      <h1 class="font-fraunces text-2xl sm:text-4xl font-bold tracking-tight text-white">
+        Government & Healthcare Ecosystem Integrations
+      </h1>
+      <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+        Engineered for seamless interoperability with the Ministry of Home Affairs (MHA), National Health Authority (NHA), and State Forensic Science Laboratories across all 700+ Indian districts.
+      </p>
+    </div>
+  </div>
+
+  <!-- 4 Realistic Enterprise Future Scope Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    <!-- Card 1: ICJS & CCTNS Gateway -->
+    <div class="bg-white rounded-2xl border border-ledgerborder p-6 shadow-sm flex flex-col justify-between space-y-5 hover:border-[#C9A227] transition-all">
+      <div class="space-y-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="p-3 rounded-xl bg-blue-50 text-blue-900 border border-blue-200">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-blue-100 text-blue-900 text-[10px] font-mono font-bold tracking-wider uppercase border border-blue-300">
+            Coming Soon · Phase 2
+          </span>
+        </div>
+
+        <div>
+          <h2 class="font-fraunces text-lg font-bold text-navy">
+            1. National ICJS & Police CCTNS Interoperability Pipeline
+          </h2>
+          <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+            Directly transmits cryptographically sealed MLCs to the <strong>Inter-operable Criminal Justice System (ICJS)</strong> and State Police <strong>Crime and Criminal Tracking Network & Systems (CCTNS)</strong> without manual dispatch.
+          </p>
+        </div>
+
+        <!-- Use Case Specs -->
+        <div class="p-3.5 bg-paper rounded-xl border border-ledgerborder space-y-2 text-xs">
+          <div class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Statutory Impact & Use Case</div>
+          <ul class="space-y-1.5 text-slate-700 text-[11px]">
+            <li class="flex items-center gap-2">
+              <span class="text-blue-700 font-bold">✓</span>
+              <span>Eliminates lost paper certificates between hospital casualties and police stations.</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="text-blue-700 font-bold">✓</span>
+              <span>Auto-links sealed medical records to police FIRs and e-Courts chargesheet filing.</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="text-blue-700 font-bold">✓</span>
+              <span>Complies with digital evidence transfer under Section 193 BNSS 2023.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+        <span class="text-[11px] font-mono text-slate-500">Target Agency: MHA / NCRB / Police</span>
+        <button onclick="openFutureModal('ICJS & CCTNS Police Gateway', 'Direct hospital-to-police electronic transmission pipeline under Section 193 BNSS 2023. In phase 2, police stations will receive real-time cryptographic webhook alerts upon MLC sealing.')" class="text-xs font-semibold text-blue-800 hover:text-navy hover:underline">
+          View Pipeline Specs →
+        </button>
+      </div>
+    </div>
+
+    <!-- Card 2: ABDM / e-Hospital Microservice -->
+    <div class="bg-white rounded-2xl border border-ledgerborder p-6 shadow-sm flex flex-col justify-between space-y-5 hover:border-[#C9A227] transition-all">
+      <div class="space-y-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="p-3 rounded-xl bg-emerald-50 text-emerald-900 border border-emerald-200">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-mono font-bold tracking-wider uppercase border border-emerald-300">
+            In Development · ABDM M3
+          </span>
+        </div>
+
+        <div>
+          <h2 class="font-fraunces text-lg font-bold text-navy">
+            2. ABDM & NIC e-Hospital HL7/FHIR Microservice
+          </h2>
+          <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+            Plug-and-play adapter for the National Health Authority's <strong>Ayushman Bharat Digital Mission (ABDM)</strong> and NIC's <strong>e-Hospital</strong> EHR suite across 25,000+ government hospitals.
+          </p>
+        </div>
+
+        <!-- Use Case Specs -->
+        <div class="p-3.5 bg-paper rounded-xl border border-ledgerborder space-y-2 text-xs">
+          <div class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Statutory Impact & Use Case</div>
+          <ul class="space-y-1.5 text-slate-700 text-[11px]">
+            <li class="flex items-center gap-2">
+              <span class="text-emerald-700 font-bold">✓</span>
+              <span>Zero-workflow disruption: hospitals plug Pramaan into their existing e-Hospital instance.</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="text-emerald-700 font-bold">✓</span>
+              <span>FHIR R4 standard payload mapping with ABHA Health ID token verification.</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="text-emerald-700 font-bold">✓</span>
+              <span>Maintains National Health Facility Registry (HFR) cryptographic signatures.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+        <span class="text-[11px] font-mono text-slate-500">Target Agency: NHA / MoHFW / NIC</span>
+        <button onclick="openFutureModal('ABDM & e-Hospital FHIR Microservice', 'Compliant with Ayushman Bharat Digital Mission (ABDM) Milestone 3 standards. Exposes standard HL7/FHIR DiagnosticReport endpoints for plug-and-play hospital adoption.')" class="text-xs font-semibold text-emerald-800 hover:text-navy hover:underline">
+          View FHIR Architecture →
+        </button>
+      </div>
+    </div>
+
+    <!-- Card 3: FSL Biological Specimen Barcode Chain -->
+    <div class="bg-white rounded-2xl border border-ledgerborder p-6 shadow-sm flex flex-col justify-between space-y-5 hover:border-[#C9A227] transition-all">
+      <div class="space-y-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="p-3 rounded-xl bg-purple-50 text-purple-900 border border-purple-200">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+            </svg>
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-purple-100 text-purple-900 text-[10px] font-mono font-bold tracking-wider uppercase border border-purple-300">
+            Coming Soon · Hardware Pilot
+          </span>
+        </div>
+
+        <div>
+          <h2 class="font-fraunces text-lg font-bold text-navy">
+            3. State FSL Biological Specimen & Viscera Barcode Chain
+          </h2>
+          <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+            Generates serialized, tamper-evident 2D cryptographic barcodes for physical blood, viscera, and DNA specimen envelopes sent to State Forensic Science Laboratories.
+          </p>
+        </div>
+
+        <!-- Use Case Specs -->
+        <div class="p-3.5 bg-paper rounded-xl border border-ledgerborder space-y-2 text-xs">
+          <div class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Statutory Impact & Use Case</div>
+          <ul class="space-y-1.5 text-slate-700 text-[11px]">
+            <li class="flex items-center gap-2">
+              <span class="text-purple-700 font-bold">✓</span>
+              <span>Physical specimen packaging container links 1:1 with digital blockchain block.</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="text-purple-700 font-bold">✓</span>
+              <span>Guarantees chain-of-custody from emergency casualty ward to forensic lab bench.</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="text-purple-700 font-bold">✓</span>
+              <span>Precludes defense claims of sample contamination or envelope swapping.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+        <span class="text-[11px] font-mono text-slate-500">Target Agency: State Forensic Science Labs</span>
+        <button onclick="openFutureModal('FSL Specimen Barcode Chain-of-Custody', 'Cryptographic physical packaging serialization linking biological viscera containers to digital blockchain record hashes.')" class="text-xs font-semibold text-purple-800 hover:text-navy hover:underline">
+          View Barcode Specs →
+        </button>
+      </div>
+    </div>
+
+    <!-- Card 4: Sarvam AI Indic Voice Dictation Agent -->
+    <div class="bg-white rounded-2xl border border-ledgerborder p-6 shadow-sm flex flex-col justify-between space-y-5 hover:border-[#C9A227] transition-all">
+      <div class="space-y-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="p-3 rounded-xl bg-amber-50 text-amber-900 border border-amber-200">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            </svg>
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 text-[10px] font-mono font-bold tracking-wider uppercase border border-amber-300">
+            Powered by Sarvam AI · Beta
+          </span>
+        </div>
+
+        <div>
+          <h2 class="font-fraunces text-lg font-bold text-navy">
+            4. Sarvam AI Indic Voice Dictation & Structuring Agent
+          </h2>
+          <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+            Allows emergency doctors to dictate casualty injury findings in regional Indian languages (Hindi, Marathi, Tamil) and auto-structures them into court-admissible legal MLC summaries.
+          </p>
+        </div>
+
+        <!-- Use Case Specs -->
+        <div class="p-3.5 bg-paper rounded-xl border border-ledgerborder space-y-2 text-xs">
+          <div class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Statutory Impact & Use Case</div>
+          <ul class="space-y-1.5 text-slate-700 text-[11px]">
+            <li class="flex items-center gap-2">
+              <span class="text-amber-700 font-bold">✓</span>
+              <span>Zero typing in high-stress trauma wards: voice dictation to cryptographic seal in &lt; 30s.</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="text-amber-700 font-bold">✓</span>
+              <span>Transforms spoken colloquial injury terms into standardized medical nomenclature.</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="text-amber-700 font-bold">✓</span>
+              <span>Generates bilingual (English + Regional) certificates automatically.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+        <span class="text-[11px] font-mono text-slate-500">Target: Casualty Trauma Surgeons</span>
+        <button onclick="openFutureModal('Sarvam AI Indic Voice Dictation', 'Utilizes Sarvam AI speech-to-text foundational models to convert regional spoken clinical observations into structured medico-legal summaries.')" class="text-xs font-semibold text-amber-800 hover:text-navy hover:underline">
+          View Voice Agent Demo →
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Future Scope Specification Modal -->
+<div id="future-scope-modal" class="hidden fixed inset-0 z-50 bg-navy/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl border-2 border-[#C9A227] max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-slide-down">
+    <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-900 text-[10px] font-bold uppercase tracking-wider">Roadmap Architecture</span>
+        <h3 id="futureModalTitle" class="font-fraunces text-base font-bold text-navy">Future Scope Specification</h3>
+      </div>
+      <button onclick="closeFutureModal()" class="text-slate-400 hover:text-navy font-bold">✕</button>
+    </div>
+
+    <div class="space-y-3 text-xs text-slate-700 leading-relaxed">
+      <div class="p-3.5 bg-paper rounded-xl border border-ledgerborder space-y-1.5">
+        <div class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Technical Implementation Scope</div>
+        <p id="futureModalDesc" class="text-slate-800 text-xs">Loading...</p>
+      </div>
+      <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900 text-[11px]">
+        <strong>Deployment Strategy:</strong> Scheduled for Phase 2 State Government Pilot integration under Section 63 BSA 2023 & Section 193 BNSS 2023 guidelines.
+      </div>
+    </div>
+
+    <div class="pt-2 flex justify-end gap-3">
+      <button onclick="closeFutureModal()" class="px-5 py-2.5 rounded-lg bg-navy text-white text-xs font-semibold uppercase tracking-wider">Close Specification</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openFutureModal(title, desc) {
+  document.getElementById('futureModalTitle').textContent = title;
+  document.getElementById('futureModalDesc').textContent = desc;
+  document.getElementById('future-scope-modal').classList.remove('hidden');
+}
+function closeFutureModal() {
+  document.getElementById('future-scope-modal').classList.add('hidden');
+}
+</script>
+{% endblock %}

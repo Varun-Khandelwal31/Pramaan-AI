@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Anchor Registry · PRAMAAN{% endblock %}
+{% block kicker %}External Cryptographic Anchor Registry{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-ledgerborder pb-4">
+    <div>
+      <h1 class="font-fraunces text-2xl sm:text-3xl font-bold text-navy">Daily Anchor Registry</h1>
+      <p class="text-xs text-slate-500 mt-1">External public state snapshots preventing retroactive database alteration.</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <form action="/anchor/seal" method="POST">
+        <button type="submit" class="px-5 py-2.5 rounded-lg bg-[#C9A227] hover:bg-[#B08D1E] text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-md transition-all">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <span>Seal Today's Anchor</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Divergence Alert Banner (if Rogue Admin Attack is simulated) -->
+  {% if divergence_info.is_divergent %}
+    <div class="tamper-flash p-5 rounded-xl bg-red-50 border-2 border-crimson shadow-lg space-y-3 animate-slide-down">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex items-start gap-3">
+          <div class="p-2 rounded-lg bg-red-100 text-crimson flex-shrink-0 mt-0.5">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-fraunces text-base font-bold text-crimson">
+              CRITICAL: EXTERNAL ANCHOR DIVERGENCE DETECTED
+            </h3>
+            <p class="text-xs text-red-900 font-medium leading-relaxed mt-1">
+              The internal database chain head does <strong>NOT match</strong> the External Public Witness Anchor snapshot.
+              This indicates that an administrator with SQLite root access attempted to modify records and recalculate internal hashes.
+            </p>
+            <div class="mt-2 font-mono text-[11px] text-red-950 bg-red-100 p-2.5 rounded border border-red-200 space-y-1">
+              <div>Calculated Local Merkle Root: <span class="font-bold break-all">{{ divergence_info.current_merkle_root }}</span></div>
+              <div>Published External Anchor Hash: <span class="font-bold text-emerald-800 break-all">{{ divergence_info.latest_anchor_hash }}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="restoreAdminAttack()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow flex-shrink-0 transition-all">
+          Restore Clean State
+        </button>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Anti-Admin Rehash Explainer Banner -->
+  <div class="bg-navy rounded-xl p-6 text-white border border-slate-800 shadow-sm grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+    <div class="md:col-span-8 space-y-2">
+      <div class="inline-flex items-center gap-1.5 text-xs text-[#E7C766] font-bold uppercase tracking-wider">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+        <span>The Anti-Admin Defense Layer</span>
+      </div>
+      <h3 class="font-fraunces text-xl font-bold">Published outside hospital control</h3>
+      <p class="text-xs text-slate-300 leading-relaxed max-w-2xl">
+        Even a rogue database administrator with full root access cannot silently re-write history or re-hash chains. Daily cumulative chain-head snapshots are permanently anchored to an external public witness network.
+      </p>
+
+      <!-- Judge Simulation Trigger -->
+      <div class="pt-2 flex items-center gap-3">
+        <button onclick="simulateAdminAttack()" class="px-3 py-1.5 rounded bg-red-900/80 hover:bg-red-800 text-red-200 border border-red-700 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+          <span>⚡ Simulate Rogue Admin 51% Attack</span>
+        </button>
+        <span class="text-[11px] text-slate-400">Rewrites SQLite & re-hashes chain to test witness proof</span>
+      </div>
+    </div>
+
+    <div class="md:col-span-4 bg-slate-900/80 p-4 rounded-lg border border-slate-700 text-xs space-y-2 font-mono">
+      <div class="text-[10px] text-slate-400 uppercase font-semibold">Latest Snapshot Synced:</div>
+      <div class="text-[#E7C766] font-bold truncate">{{ latest_anchor.chain_head_hash if latest_anchor else 'N/A' }}</div>
+      <div class="text-[11px] text-emerald-400 flex items-center gap-1 font-sans">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        External Node Verified
+      </div>
+    </div>
+  </div>
+
+  <!-- Anchors Table -->
+  <div class="bg-white rounded-xl border border-ledgerborder shadow-sm overflow-hidden">
+    <div class="p-4 border-b border-ledgerborder flex items-center justify-between bg-slate-50">
+      <h3 class="font-fraunces text-base font-bold text-navy">Daily Anchor Snapshots</h3>
+      <span class="font-mono text-xs text-slate-500">{{ anchors|length }} snapshots recorded</span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead>
+          <tr class="border-b border-ledgerborder bg-slate-100/60 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            <th class="py-3 px-4">Anchor ID</th>
+            <th class="py-3 px-4">Cumulative Sealed Records</th>
+            <th class="py-3 px-4">Anchored Chain-Head Hash</th>
+            <th class="py-3 px-4">Timestamp (UTC)</th>
+            <th class="py-3 px-4 text-right">Witness Proof</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 font-mono">
+          {% for anchor in anchors %}
+          <tr class="hover:bg-slate-50">
+            <td class="py-3 px-4 text-slate-500 font-bold">#ANCHOR-{{ anchor.id }}</td>
+            <td class="py-3 px-4 text-navy font-semibold">{{ anchor.records_sealed }} records</td>
+            <td class="py-3 px-4 text-slate-800 break-all max-w-xs">
+              <span class="text-[#C9A227] font-bold">{{ anchor.chain_head_hash[:16] }}</span>...{{ anchor.chain_head_hash[-12:] }}
+            </td>
+            <td class="py-3 px-4 text-slate-600 text-[11px]">{{ anchor.created_at }}</td>
+            <td class="py-3 px-4 text-right font-sans">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                ✓ Publicly Witnessed
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

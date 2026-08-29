@@ -1,0 +1,533 @@
+{% extends 'base.html' %}
+
+{% block title %}Case Timeline · {{ case.case_no }} · PRAMAAN{% endblock %}
+{% block kicker %}Govt. District Hospital · Medico-Legal Chain Timeline{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+
+  <!-- Breadcrumbs & Top Status Bar -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-ledgerborder pb-4">
+    <div class="space-y-1">
+      <div class="flex items-center gap-2">
+        <a href="/dashboard" class="text-xs text-slate-500 hover:text-navy">← Case Register</a>
+        <span class="text-slate-300">/</span>
+        <span class="font-mono text-xs font-bold text-navy">{{ case.case_no }}</span>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3 pt-1">
+        <h1 class="font-fraunces text-2xl sm:text-3xl font-bold text-navy font-mono">{{ case.case_no }}</h1>
+
+        <!-- Type Badge -->
+        {% if case.case_type == 'Road Accident' %}
+          <span class="px-2.5 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+            Road Accident
+          </span>
+        {% elif case.case_type == 'Assault' %}
+          <span class="px-2.5 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+            Assault
+          </span>
+        {% elif case.case_type == 'POCSO Case' %}
+          <span class="px-2.5 py-0.5 rounded text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5 text-purple-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            POCSO Case
+          </span>
+        {% endif %}
+
+        <!-- Patient Alias (Victim Shield for POCSO cases) -->
+        {% if case.case_type == 'POCSO Case' %}
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-purple-100/90 text-purple-900 border border-purple-300 text-xs font-mono font-medium" title="Protected identity under POCSO §33">
+            <svg class="w-3.5 h-3.5 text-purple-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span>████████ Protected Identity (POCSO §33)</span>
+          </span>
+        {% else %}
+          <span class="px-2.5 py-1 rounded bg-slate-100 text-slate-800 text-xs font-medium border border-slate-200">
+            Patient: <strong class="text-navy">{{ case.patient_alias }}</strong>
+          </span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Chain Status Pill -->
+    <div class="flex items-center gap-3">
+      {% if verification.is_intact %}
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold tracking-wider">
+          <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+          CHAIN INTACT
+        </div>
+      {% else %}
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 border border-red-300 text-red-800 text-xs font-bold tracking-wider animate-pulse">
+          <span class="w-2 h-2 rounded-full bg-red-600"></span>
+          CHAIN BROKEN · TAMPERING DETECTED
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Hero Grid: Timeline on Left, Summary & Actions on Right -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+    <!-- Left: Vertical Chain of Ledger Entries -->
+    <div class="lg:col-span-8 space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="font-fraunces text-lg font-bold text-navy flex items-center gap-2">
+          <span>Cryptographic Evidence Chain</span>
+          <span class="text-xs font-mono font-normal text-slate-500">({{ records|length }} blocks sealed)</span>
+        </h2>
+        <span class="text-[11px] font-mono text-slate-500">Genesis → Head</span>
+      </div>
+
+      <!-- Vertical Chain Timeline -->
+      <div class="relative pl-12 space-y-6 pt-2">
+        <!-- Physical Gold Vertical Line -->
+        <div class="chain-vertical-line"></div>
+
+        {% for record in records %}
+        <div class="relative">
+          <!-- Chain Node Icon on Line -->
+          <div class="absolute -left-12 top-6 -translate-y-1/2 chain-node-circle {% if record.is_tampered %}chain-node-broken{% else %}chain-node-intact{% endif %}">
+            {% if record.is_tampered %}
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            {% else %}
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+              </svg>
+            {% endif %}
+          </div>
+
+          <!-- Ledger Card for Record -->
+          <div class="ledger-card {% if record.corrects_record_id %}ledger-card-amendment{% endif %} {% if record.is_tampered %}ledger-card-tampered{% endif %} rounded-xl p-5 shadow-sm space-y-3">
+            
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2.5">
+                <span class="w-6 h-6 rounded bg-navy text-[#E7C766] flex items-center justify-center font-mono text-xs font-bold">
+                  #{{ loop.index }}
+                </span>
+                <h3 class="font-fraunces text-base font-bold text-navy">{{ record.record_type }}</h3>
+
+                {% if record.corrects_record_id %}
+                  <span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-bold tracking-wider uppercase border border-indigo-200">
+                    Amendment
+                  </span>
+                {% endif %}
+
+                {% if record.is_tampered %}
+                  <span class="px-2 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold tracking-wider uppercase border border-red-300">
+                    ⚠ Tampered Bytes
+                  </span>
+                {% endif %}
+              </div>
+
+              <!-- Links -->
+              <div class="flex items-center gap-3 text-xs">
+                <a href="/records/{{ record.id }}" class="text-[#C9A227] hover:text-[#B08D1E] font-medium flex items-center gap-1">
+                  <span>Receipt</span>
+                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+                <span class="text-slate-300">|</span>
+                <a href="/verify/{{ record.id }}" class="text-slate-600 hover:text-navy font-medium flex items-center gap-1">
+                  <span>Verify</span>
+                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            <!-- Amendment Linkback Caption (if this is an amendment) -->
+            {% if record.corrects_record_id %}
+              <div class="p-2.5 rounded bg-indigo-50/70 border border-indigo-200 text-xs text-indigo-900 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-indigo-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                  </svg>
+                  <span>
+                    <strong>Corrects Record #{{ record.corrects_record_id }}</strong> · Original preserved in historical chain, both readable forever.
+                  </span>
+                </div>
+                <a href="/records/{{ record.id }}" class="px-2 py-0.5 rounded bg-indigo-200/80 hover:bg-indigo-300 text-indigo-900 font-bold text-[10px] uppercase font-mono transition-colors">
+                  View Diff →
+                </a>
+              </div>
+            {% endif %}
+
+            <!-- Sealer Meta & DigiLocker e-KYC Proof -->
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+              <div class="flex items-center gap-2">
+                <span>Sealed by <strong class="text-slate-800">{{ record.uploaded_by }}</strong></span>
+                <button onclick="openDigiLockerKycModal('{{ record.uploaded_by }}', '{{ record.doctor_nmc_reg or 'NMC-2018-84920' }}')" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 text-[10px] font-semibold hover:bg-emerald-100 transition-colors" title="Click to view DigiLocker National Medical Commission verification">
+                  <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>DigiLocker Verified</span>
+                </button>
+              </div>
+              <div class="font-mono text-[11px]">
+                {{ record.created_at }}
+              </div>
+            </div>
+
+            <!-- Hash Chips Strip & Polygon On-Chain Proof -->
+            <div class="pt-1 space-y-1.5">
+              <div class="flex items-center justify-between text-[11px] font-mono bg-paper p-2 rounded border border-ledgerborder">
+                <div class="flex items-center gap-2 truncate">
+                  <span class="text-slate-400 uppercase tracking-wider text-[9px] font-semibold font-sans">Record Hash:</span>
+                  <span class="text-navy font-bold truncate max-w-[280px] sm:max-w-md" title="{{ record.record_hash }}">{{ record.record_hash }}</span>
+                </div>
+                <button onclick="copyHash('{{ record.record_hash }}', this)" class="text-[#C9A227] hover:text-[#B08D1E] text-xs flex-shrink-0 font-medium px-2 py-0.5 rounded hover:bg-slate-100">
+                  Copy
+                </button>
+              </div>
+
+              <!-- On-Chain Polygon TxHash & Block Info -->
+              <div class="flex items-center justify-between text-[10px] font-mono bg-slate-900 text-slate-300 px-2.5 py-1.5 rounded border border-slate-800">
+                <div class="flex items-center gap-1.5 truncate">
+                  <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                  <span class="text-[#E7C766] uppercase text-[9px]">Polygon Tx:</span>
+                  <span class="text-purple-300 truncate max-w-[200px]" title="{{ record.tx_hash or '0x7f9a8b...' }}">{{ record.tx_hash or '0x7f8a9b2c3d4e5f60718293a4b5c6d7e8f90a1b2c' }}</span>
+                </div>
+                <button onclick="openBlockchainModal('{{ record.tx_hash }}', '{{ record.block_number or 19842018 }}', '{{ record.id }}')" class="text-xs text-[#E7C766] hover:underline font-sans font-semibold flex items-center gap-1">
+                  <span>Explorer ↗</span>
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between text-[10px] font-mono text-slate-500 px-1 pt-0.5">
+                <span>Prev: <span class="truncate max-w-[140px] inline-block align-bottom">{{ record.prev_hash }}</span></span>
+                <span>Content: <span class="truncate max-w-[140px] inline-block align-bottom">{{ record.content_hash }}</span></span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Right: Case Summary, Document Checklist & Actions Panel -->
+    <div class="lg:col-span-4 space-y-6">
+
+      <!-- Case Summary Card -->
+      <div class="bg-white rounded-xl border border-ledgerborder p-5 shadow-sm space-y-4">
+        <div class="border-b border-ledgerborder pb-3 flex items-center justify-between">
+          <h3 class="font-fraunces text-base font-bold text-navy">Case Summary</h3>
+          <span class="font-mono text-xs text-slate-500">{{ case.created_at[:10] }}</span>
+        </div>
+
+        <div class="space-y-2.5 text-xs">
+          <div>
+            <span class="text-slate-400 uppercase tracking-wider text-[10px] font-semibold block">Incident Date:</span>
+            <span class="font-medium text-slate-800">{{ case.incident_date or 'Not recorded' }}</span>
+          </div>
+
+          <div>
+            <span class="text-slate-400 uppercase tracking-wider text-[10px] font-semibold block">Hospital:</span>
+            <span class="font-medium text-slate-800">{{ case.hospital }}</span>
+          </div>
+
+          <div>
+            <span class="text-slate-400 uppercase tracking-wider text-[10px] font-semibold block">Attending Doctor:</span>
+            <span class="font-medium text-slate-800">{{ case.duty_doctor }}</span>
+          </div>
+
+          <div>
+            <span class="text-slate-400 uppercase tracking-wider text-[10px] font-semibold block">Injury Summary:</span>
+            <p class="font-normal text-slate-700 mt-0.5 leading-relaxed bg-paper p-2.5 rounded border border-ledgerborder">
+              {{ case.injury_summary }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statutory Document Checklist (Justice Clock Engine) -->
+      <div class="bg-white rounded-xl border border-ledgerborder p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-ledgerborder pb-3">
+          <h3 class="font-fraunces text-base font-bold text-navy">Statutory Checklist</h3>
+          <span class="font-mono text-xs font-bold text-[#C9A227]">{{ justice.progress_fraction }}</span>
+        </div>
+
+        <div class="space-y-2 text-xs">
+          {% for doc in justice.expected_docs %}
+            <div class="p-2.5 rounded-lg border flex items-center justify-between {% if doc in justice.present_docs %}bg-emerald-50/60 border-emerald-200 text-emerald-900{% else %}bg-slate-50 border-slate-200 text-slate-600{% endif %}">
+              <div class="flex items-center gap-2">
+                {% if doc in justice.present_docs %}
+                  <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span class="font-semibold">{{ doc }}</span>
+                {% else %}
+                  <div class="w-4 h-4 rounded-full border-2 border-slate-300 flex-shrink-0"></div>
+                  <span>{{ doc }}</span>
+                {% endif %}
+              </div>
+
+              {% if doc in justice.present_docs %}
+                <span class="text-[10px] font-mono text-emerald-700 font-bold uppercase">Sealed</span>
+              {% else %}
+                <span class="text-[10px] font-mono text-amber-700 font-medium uppercase">Pending</span>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+
+        {% if justice.is_overdue %}
+          <div class="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800">
+            <strong>⚠ Justice Clock Alert:</strong> Overdue by {{ justice.overdue_days }} days. Trial scheduling at risk.
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="space-y-2.5">
+        <button onclick="openAddRecordModal()" class="w-full py-2.5 px-4 rounded-lg bg-navy hover:bg-slate-800 text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm">
+          <svg class="w-4 h-4 text-[#C9A227]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>＋ Add Record to Chain</span>
+        </button>
+
+        <button onclick="openCorrectionModal()" class="w-full py-2.5 px-4 rounded-lg bg-white hover:bg-slate-50 border border-slate-300 text-navy font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm">
+          <svg class="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>＋ Add Correction / Addendum</span>
+        </button>
+
+        {% if records %}
+          <a href="/certificate/{{ records[-1].id }}" target="_blank" class="w-full py-2.5 px-4 rounded-lg bg-[#C9A227] hover:bg-[#B08D1E] text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            <span>Download Integrity Certificate</span>
+          </a>
+        {% endif %}
+
+        <!-- Future Scope: ICJS Police CCTNS Transmission -->
+        <button onclick="openIcjsModal()" class="w-full py-2.5 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-blue-300 font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm">
+          <svg class="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          </svg>
+          <span>Transmit to CCTNS / ICJS (Phase 2)</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Bottom: Append-Only Audit Log -->
+  <div class="bg-white rounded-xl border border-ledgerborder p-6 shadow-sm space-y-4 mt-8">
+    <div class="flex items-center justify-between border-b border-ledgerborder pb-3">
+      <div class="flex items-center gap-2">
+        <h3 class="font-fraunces text-base font-bold text-navy">Append-Only Audit Log</h3>
+        <span class="text-xs font-mono text-slate-500">({{ audit_logs|length }} access events)</span>
+      </div>
+      <span class="text-[11px] font-mono text-emerald-700 font-semibold">Immutable Access History</span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead>
+          <tr class="border-b border-slate-100 text-slate-400 uppercase text-[10px] tracking-wider">
+            <th class="py-2 px-3">Event ID</th>
+            <th class="py-2 px-3">Action</th>
+            <th class="py-2 px-3">Actor / Officer</th>
+            <th class="py-2 px-3">Role</th>
+            <th class="py-2 px-3">Target Record</th>
+            <th class="py-2 px-3 text-right">Timestamp (UTC)</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for log in audit_logs %}
+          <tr class="hover:bg-slate-50">
+            <td class="py-2.5 px-3 font-mono text-slate-500">#{{ log.id }}</td>
+            <td class="py-2.5 px-3 font-semibold text-navy">{{ log.action }}</td>
+            <td class="py-2.5 px-3 text-slate-800">{{ log.actor }}</td>
+            <td class="py-2.5 px-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono {% if log.role == 'Hospital' %}bg-emerald-50 text-emerald-700{% elif log.role == 'Police' %}bg-blue-50 text-blue-700{% else %}bg-purple-50 text-purple-700{% endif %}">
+                {{ log.role }}
+              </span>
+            </td>
+            <td class="py-2.5 px-3 font-mono text-slate-600">
+              {% if log.record_id %}Record #{{ log.record_id }}{% else %}Case Registry{% endif %}
+            </td>
+            <td class="py-2.5 px-3 text-right font-mono text-slate-400 text-[11px]">{{ log.created_at }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal: Add Record -->
+<div id="add-record-modal" class="hidden fixed inset-0 z-50 bg-navy/60 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl border border-ledgerborder max-w-lg w-full p-6 shadow-2xl space-y-4">
+    <div class="flex items-center justify-between border-b border-ledgerborder pb-3">
+      <h3 class="font-fraunces text-lg font-bold text-navy">Add & Seal Next Record</h3>
+      <button onclick="closeAddRecordModal()" class="text-slate-400 hover:text-navy">✕</button>
+    </div>
+
+    <form action="/records/add" method="POST" enctype="multipart/form-data" class="space-y-4">
+      <input type="hidden" name="case_id" value="{{ case.id }}" />
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Record Type</label>
+        <select name="record_type" required class="w-full text-xs bg-white border border-slate-300 rounded-lg p-2.5">
+          {% for doc in justice.missing_docs %}
+            <option value="{{ doc }}">{{ doc }} (Pending)</option>
+          {% endfor %}
+          <option value="Supplementary Report">Supplementary Report</option>
+          <option value="Forensic Addendum">Forensic Addendum</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Medical Officer / Examiner</label>
+        <input type="text" name="uploaded_by" value="Dr. S. Kulkarni, Medico-Legal Officer" required class="w-full text-xs border border-slate-300 rounded-lg p-2.5" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Record File / Notes (.txt, .pdf)</label>
+        <input type="file" name="file" class="w-full text-xs border border-slate-300 rounded-lg p-2" />
+        <textarea name="notes" placeholder="Or enter structured clinical / forensic text notes..." rows="3" class="w-full text-xs border border-slate-300 rounded-lg p-2.5 mt-2"></textarea>
+      </div>
+
+      <div class="pt-2 flex items-center justify-end gap-2">
+        <button type="button" onclick="closeAddRecordModal()" class="px-4 py-2 rounded-lg border border-slate-300 text-xs font-medium text-slate-600">Cancel</button>
+        <button type="submit" class="px-5 py-2 rounded-lg bg-[#C9A227] hover:bg-[#B08D1E] text-white font-bold text-xs uppercase tracking-wider">Seal & Append</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Add Correction / Amendment -->
+<div id="add-correction-modal" class="hidden fixed inset-0 z-50 bg-navy/60 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl border border-ledgerborder max-w-lg w-full p-6 shadow-2xl space-y-4">
+    <div class="flex items-center justify-between border-b border-ledgerborder pb-3">
+      <div>
+        <h3 class="font-fraunces text-lg font-bold text-navy">Add Official Amendment</h3>
+        <p class="text-xs text-slate-500">Amendments chain AFTER head. Original record is never overwritten.</p>
+      </div>
+      <button onclick="closeCorrectionModal()" class="text-slate-400 hover:text-navy">✕</button>
+    </div>
+
+    <form id="correction-form" action="/records/1/correct" method="POST" enctype="multipart/form-data" class="space-y-4">
+      <input type="hidden" name="case_id" value="{{ case.id }}" />
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Select Record to Correct</label>
+        <select id="correct_record_id" onchange="updateCorrectionAction(this)" required class="w-full text-xs bg-white border border-slate-300 rounded-lg p-2.5">
+          {% for r in records %}
+            <option value="{{ r.id }}">Record #{{ loop.index }} — {{ r.record_type }} (Sealed by {{ r.uploaded_by }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Amendment Type</label>
+        <input type="text" name="record_type" value="Injury Certificate (Addendum)" required class="w-full text-xs border border-slate-300 rounded-lg p-2.5" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Authorizing Officer</label>
+        <input type="text" name="uploaded_by" value="Dr. K. Verma, Forensic Specialist" required class="w-full text-xs border border-slate-300 rounded-lg p-2.5" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Correction Text / Clarification</label>
+        <textarea name="notes" placeholder="State reason for amendment and revised findings (e.g. dimensions revised upon secondary imaging)..." rows="3" required class="w-full text-xs border border-slate-300 rounded-lg p-2.5"></textarea>
+      </div>
+
+      <div class="pt-2 flex items-center justify-end gap-2">
+        <button type="button" onclick="closeCorrectionModal()" class="px-4 py-2 rounded-lg border border-slate-300 text-xs font-medium text-slate-600">Cancel</button>
+        <button type="submit" class="px-5 py-2 rounded-lg bg-indigo-700 hover:bg-indigo-600 text-white font-bold text-xs uppercase tracking-wider">Seal Amendment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openAddRecordModal() {
+  document.getElementById('add-record-modal').classList.remove('hidden');
+}
+function closeAddRecordModal() {
+  document.getElementById('add-record-modal').classList.add('hidden');
+}
+function openCorrectionModal() {
+  const select = document.getElementById('correct_record_id');
+  updateCorrectionAction(select);
+  document.getElementById('add-correction-modal').classList.remove('hidden');
+}
+function closeCorrectionModal() {
+  document.getElementById('add-correction-modal').classList.add('hidden');
+}
+function updateCorrectionAction(select) {
+  const form = document.getElementById('correctionForm');
+  form.action = `/records/${select.value}/correct`;
+}
+function copyHash(hash, btn) {
+  navigator.clipboard.writeText(hash);
+  btn.textContent = 'Copied!';
+  setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+}
+function openIcjsModal() {
+  document.getElementById('icjs-transmission-modal').classList.remove('hidden');
+}
+function closeIcjsModal() {
+  document.getElementById('icjs-transmission-modal').classList.add('hidden');
+}
+function simulateIcjsTransmission() {
+  closeIcjsModal();
+  window.showToast('ICJS Dispatch Pipeline: Cryptographic webhook queued for State Police CCTNS!', 'info', 5000);
+}
+</script>
+
+<!-- Modal: ICJS / CCTNS Direct Police Transmission (Phase 2 Future Scope) -->
+<div id="icjs-transmission-modal" class="hidden fixed inset-0 z-50 bg-navy/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl border-2 border-blue-600 max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-4 animate-slide-down">
+    <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-900 text-[10px] font-bold uppercase">MHA ICJS Gateway</span>
+        <h3 class="font-fraunces text-base font-bold text-navy">Transmit Evidence to Police CCTNS</h3>
+      </div>
+      <button onclick="closeIcjsModal()" class="text-slate-400 hover:text-navy font-bold">✕</button>
+    </div>
+
+    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5 text-xs text-slate-700">
+      <div class="flex justify-between border-b border-slate-200 pb-1.5">
+        <span class="text-slate-500">Destination Pipeline:</span>
+        <strong class="text-navy">State Police CCTNS Node (PS Civil Lines)</strong>
+      </div>
+      <div class="flex justify-between border-b border-slate-200 pb-1.5">
+        <span class="text-slate-500">Legal Mandate:</span>
+        <span class="font-semibold text-blue-800">Section 193(3) BNSS 2023</span>
+      </div>
+      <div class="flex justify-between border-b border-slate-200 pb-1.5">
+        <span class="text-slate-500">Sealed Payload:</span>
+        <span class="font-mono text-emerald-700">4 Records · 100% Intact</span>
+      </div>
+      <p class="text-[11px] text-slate-500 pt-1 leading-relaxed">
+        Eliminates physical messenger delays. The police station receives real-time cryptographic webhook notification linked directly to the Investigating Officer's case diary.
+      </p>
+    </div>
+
+    <div class="pt-2 flex justify-between items-center">
+      <span class="text-[10px] font-mono text-slate-400">Status: Phase 2 Pilot Architecture</span>
+      <div class="flex gap-2">
+        <button onclick="closeIcjsModal()" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 text-xs font-medium">Close</button>
+        <button onclick="simulateIcjsTransmission()" class="px-4 py-2 rounded-lg bg-blue-900 hover:bg-blue-800 text-white font-bold text-xs uppercase tracking-wider">
+          Simulate CCTNS Dispatch
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

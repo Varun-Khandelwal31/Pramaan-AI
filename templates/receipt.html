@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Integrity Receipt · Record #{{ record.id }} · PRAMAAN{% endblock %}
+{% block kicker %}Govt. District Hospital · Medico-Legal Integrity Receipt{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-ledgerborder pb-4">
+    <div>
+      <div class="flex items-center gap-2">
+        <a href="/cases/{{ case.id }}" class="text-xs text-slate-500 hover:text-navy">← Back to Case Timeline ({{ case.case_no }})</a>
+        <span class="text-slate-300">/</span>
+        <span class="font-mono text-xs font-bold text-navy">Record #{{ record.id }}</span>
+      </div>
+      <h1 class="font-fraunces text-2xl sm:text-3xl font-bold text-navy mt-1">Integrity Receipt & Document</h1>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <a href="/verify/{{ record.id }}" class="px-4 py-2 rounded-lg bg-navy hover:bg-slate-800 text-white text-xs font-semibold uppercase tracking-wider flex items-center gap-2 shadow-sm">
+        <svg class="w-4 h-4 text-[#C9A227]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Verify Live →</span>
+      </a>
+
+      <a href="/certificate/{{ record.id }}" target="_blank" class="px-4 py-2 rounded-lg bg-[#C9A227] hover:bg-[#B08D1E] text-white text-xs font-semibold uppercase tracking-wider flex items-center gap-2 shadow-sm">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+        </svg>
+        <span>Print Certificate</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Two-Panel Grid: Document Viewer Left, Receipt Card Right -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+    <!-- Left: Document Viewer -->
+    <div class="lg:col-span-7 space-y-4">
+      <div class="bg-white rounded-xl border border-ledgerborder shadow-sm overflow-hidden">
+        <div class="bg-navy p-4 text-white flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <svg class="w-4 h-4 text-[#E7C766]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span class="font-bold text-xs">{{ record.file_name }}</span>
+          </div>
+          <a href="/records/{{ record.id }}/download" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[#E7C766] text-[11px] font-medium flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span>Download Raw Blob</span>
+          </a>
+        </div>
+
+        <div class="p-5 bg-paper font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto whitespace-pre-wrap max-h-[500px]">
+{{ file_content_text }}
+        </div>
+
+        <div class="p-3 bg-slate-50 border-t border-ledgerborder text-[11px] text-slate-500 flex items-center justify-between">
+          <span>Payload Size: {{ record.file_blob|length }} bytes</span>
+          <span class="font-mono text-slate-700">MIME: text/plain · Sealed</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Receipt Card with QR in Gold Frame -->
+    <div class="lg:col-span-5 space-y-6">
+
+      <!-- Receipt Card -->
+      <div class="bg-white rounded-xl border-2 border-[#C9A227] p-6 shadow-xl space-y-5 relative">
+        <div class="text-center space-y-1 border-b border-ledgerborder pb-4">
+          <div class="kicker justify-center">OFFICIAL MEDICO-LEGAL PROOF</div>
+          <h2 class="font-fraunces text-xl font-bold text-navy">Integrity Receipt</h2>
+          <span class="text-[11px] font-mono text-slate-500">Certificate of Electronic Record Seal</span>
+        </div>
+
+        <!-- Scannable QR Code with Gold Frame -->
+        <div class="flex flex-col items-center justify-center p-4 bg-paper rounded-xl border border-ledgerborder text-center space-y-3">
+          <div class="p-3 bg-white border-2 border-[#C9A227] rounded-xl shadow-md">
+            <img src="/qr/{{ record.id }}" alt="Record QR Code" class="w-40 h-40 object-contain mx-auto" />
+          </div>
+          <div class="space-y-0.5">
+            <span class="text-xs font-bold text-navy">Scan with any Mobile Phone Camera</span>
+            <p class="text-[10px] text-slate-500 font-mono">http://{{ request_host }}/verify/{{ record.id }}</p>
+          </div>
+        </div>
+
+        <!-- Metadata Breakdown -->
+        <div class="space-y-3 text-xs">
+          <div class="flex justify-between border-b border-slate-100 pb-1.5">
+            <span class="text-slate-500">Case No:</span>
+            <span class="font-mono font-bold text-navy">{{ case.case_no }}</span>
+          </div>
+
+          <div class="flex justify-between border-b border-slate-100 pb-1.5">
+            <span class="text-slate-500">Record Type:</span>
+            <span class="font-semibold text-slate-800">{{ record.record_type }}</span>
+          </div>
+
+          <div class="flex justify-between border-b border-slate-100 pb-1.5">
+            <span class="text-slate-500">Sealed By:</span>
+            <span class="text-slate-800">{{ record.uploaded_by }}</span>
+          </div>
+
+          <div class="flex justify-between border-b border-slate-100 pb-1.5">
+            <span class="text-slate-500">Timestamp:</span>
+            <span class="font-mono text-slate-700">{{ record.created_at }}</span>
+          </div>
+
+          <div class="space-y-1 pt-1">
+            <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider block">Content Hash (SHA-256):</span>
+            <div class="p-2 bg-paper rounded border border-slate-200 font-mono text-[10px] text-slate-800 break-all">
+              {{ record.content_hash }}
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider block">Record Ledger Hash:</span>
+            <div class="p-2 bg-navy text-[#E7C766] rounded border border-slate-800 font-mono text-[10px] break-all">
+              {{ record.record_hash }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Amendment Lineage Chip -->
+        {% if record.corrects_record_id %}
+          <div class="p-3 rounded-lg bg-indigo-50 border border-indigo-200 text-xs text-indigo-900">
+            <div class="font-bold flex items-center gap-1.5">
+              <span>Amendment Record</span>
+            </div>
+            <p class="text-[11px] text-indigo-800 mt-1 leading-snug">
+              This record officially amends <strong>Record #{{ record.corrects_record_id }}</strong>. Both records remain immutable in the historical audit ledger.
+            </p>
+          </div>
+        {% endif %}
+
+        <div class="pt-2">
+          <a href="/verify/{{ record.id }}" class="w-full py-3 px-4 rounded-xl bg-[#C9A227] hover:bg-[#B08D1E] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow transition-all">
+            <span>Verify Live in Sandbox →</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
