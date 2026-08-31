@@ -3,6 +3,7 @@
 # ⚖️ PRAMAAN (प्रमाण)
 ### *Cryptographically Sealed Medico-Legal Evidence Infrastructure for Indian Healthcare & Judiciary*
 
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Deployment-pramaan--ai--yfu8.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://pramaan-ai-yfu8.vercel.app/)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-005571.svg?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
 [![Compliance](https://img.shields.io/badge/Compliance-Sec_63_BSA_2023-gold.svg?style=for-the-badge)](https://prsindia.org/billtrack/the-bharatiya-sakshya-bill-2023)
@@ -11,6 +12,12 @@
 [![Tests](https://img.shields.io/badge/Tests-100%25_Passing-emerald.svg?style=for-the-badge)](tests/)
 
 **"Evidence that cannot lie. Sealed at creation. Verifiable by anyone. Admissible in court."**
+
+### 🔗 **Live Production URL**: [https://pramaan-ai-yfu8.vercel.app/](https://pramaan-ai-yfu8.vercel.app/)
+
+| 🏥 Hospital Intake | 📋 Evidence Register | 🔍 Live Verifier | 📜 Section 63 BSA Cert | ⚓ Anchor Registry | 🌡️ IoT Cold-Chain |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| [Intake Bay](https://pramaan-ai-yfu8.vercel.app/cases/new) | [Dashboard](https://pramaan-ai-yfu8.vercel.app/dashboard) | [Verify #1](https://pramaan-ai-yfu8.vercel.app/verify/1) | [BSA Cert #1](https://pramaan-ai-yfu8.vercel.app/certificate/1) | [Merkle Registry](https://pramaan-ai-yfu8.vercel.app/anchor) | [IoT Grid](https://pramaan-ai-yfu8.vercel.app/telemetry) |
 
 ---
 
