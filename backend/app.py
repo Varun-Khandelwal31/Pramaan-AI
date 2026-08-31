@@ -40,37 +40,49 @@ app = FastAPI(
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
 
-def _find_dir(dir_name: str) -> str:
+# Robust multi-path template discovery
+def _get_template_dirs():
     candidates = [
-        os.path.join(PROJECT_ROOT, "frontend", dir_name),
-        os.path.join(PROJECT_ROOT, dir_name),
-        os.path.join(BASE_DIR, dir_name),
-        os.path.join(os.getcwd(), "frontend", dir_name),
-        os.path.join(os.getcwd(), dir_name),
-        os.path.join("/var/task", "frontend", dir_name),
-        os.path.join("/var/task", dir_name),
-        os.path.join("/var/task/api", "frontend", dir_name),
-        os.path.join("/var/task/api", dir_name),
+        os.path.join(PROJECT_ROOT, "frontend", "templates"),
+        os.path.join(PROJECT_ROOT, "templates"),
+        os.path.join(BASE_DIR, "templates"),
+        os.path.join(os.getcwd(), "frontend", "templates"),
+        os.path.join(os.getcwd(), "templates"),
+        "/var/task/frontend/templates",
+        "/var/task/templates",
+        "/var/task/api/frontend/templates",
+        "/var/task/api/templates",
+    ]
+    found = [c for c in candidates if os.path.exists(c) and os.path.isdir(c)]
+    return found if found else [os.path.join(PROJECT_ROOT, "frontend", "templates")]
+
+TEMPLATES_DIRS = _get_template_dirs()
+templates = Jinja2Templates(directory=TEMPLATES_DIRS)
+
+# Resolve STATIC_DIR safely
+def _get_static_dir():
+    candidates = [
+        os.path.join(PROJECT_ROOT, "frontend", "static"),
+        os.path.join(PROJECT_ROOT, "static"),
+        os.path.join(os.getcwd(), "frontend", "static"),
+        os.path.join(os.getcwd(), "static"),
+        "/var/task/frontend/static",
+        "/var/task/static",
+        "/var/task/api/frontend/static",
     ]
     for c in candidates:
         if os.path.exists(c) and os.path.isdir(c):
             return c
-    return os.path.join(PROJECT_ROOT, "frontend", dir_name)
-
-# Resolve STATIC_DIR safely
-STATIC_DIR = _find_dir("static")
-if not os.path.exists(STATIC_DIR):
+    fallback = os.path.join(PROJECT_ROOT, "frontend", "static")
     try:
-        os.makedirs(STATIC_DIR, exist_ok=True)
+        os.makedirs(fallback, exist_ok=True)
     except Exception:
         pass
+    return fallback
 
+STATIC_DIR = _get_static_dir()
 if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-
-# Resolve TEMPLATES_DIR safely
-TEMPLATES_DIR = _find_dir("templates")
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 @app.on_event("startup")
 def on_startup():
@@ -82,6 +94,33 @@ def on_startup():
             seed.seed_database(force=True)
     except Exception as e:
         print(f"Startup initialization notice: {e}")
+
+# Global Exception Diagnostic Handler for Serverless
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    err_tb = traceback.format_exc()
+    print(f"PRAMAAN Server Error on {request.url.path}: {err_tb}")
+    return HTMLResponse(
+        content=f"""<!DOCTYPE html>
+        <html>
+        <head><title>PRAMAAN Server Status</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+        </head>
+        <body class="bg-gray-950 text-white p-8 font-mono">
+          <div class="max-w-2xl mx-auto bg-gray-900 p-6 rounded-2xl border border-yellow-500 shadow-2xl">
+            <h1 class="text-xl font-bold text-yellow-400 mb-2">⚖️ PRAMAAN Server Diagnostic Notice</h1>
+            <p class="text-xs text-gray-300 mb-4">Request to <code class="text-yellow-300">{request.url.path}</code> encountered an error:</p>
+            <pre class="bg-black p-4 rounded-xl text-[11px] text-red-400 overflow-x-auto leading-relaxed">{err_tb}</pre>
+            <div class="mt-4 flex gap-3">
+              <a href="/api/system/health" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg">Check Health API</a>
+              <a href="/" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-gray-900 font-bold text-xs rounded-lg">Return to Home</a>
+            </div>
+          </div>
+        </body>
+        </html>""",
+        status_code=500
+    )
 
 # Vercel Internal Rewrite Path Normalizer Middleware
 @app.middleware("http")
