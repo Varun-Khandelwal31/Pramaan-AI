@@ -21,34 +21,44 @@ app = FastAPI(title="PRAMAAN Medico-Legal Evidence Platform")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Resolve STATIC_DIR safely for local and Vercel serverless
-STATIC_DIR = os.path.join(BASE_DIR, "static")
+def _find_dir(name: str) -> str:
+    candidates = [
+        os.path.join(BASE_DIR, name),
+        os.path.join(os.getcwd(), name),
+        os.path.join(os.path.dirname(BASE_DIR), name),
+        os.path.join("/var/task", name),
+        os.path.join("/var/task/api", name),
+    ]
+    for c in candidates:
+        if os.path.exists(c) and os.path.isdir(c):
+            return c
+    return os.path.join(BASE_DIR, name)
+
+# Resolve STATIC_DIR safely
+STATIC_DIR = _find_dir("static")
 if not os.path.exists(STATIC_DIR):
-    for candidate in [os.path.join(os.getcwd(), "static"), "/var/task/static"]:
-        if os.path.exists(candidate):
-            STATIC_DIR = candidate
-            break
+    try:
+        os.makedirs(STATIC_DIR, exist_ok=True)
+    except Exception:
+        pass
 
-os.makedirs(STATIC_DIR, exist_ok=True)
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# Resolve TEMPLATES_DIR safely for local and Vercel serverless
-TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
-if not os.path.exists(TEMPLATES_DIR):
-    for candidate in [os.path.join(os.getcwd(), "templates"), "/var/task/templates"]:
-        if os.path.exists(candidate):
-            TEMPLATES_DIR = candidate
-            break
-
+# Resolve TEMPLATES_DIR safely
+TEMPLATES_DIR = _find_dir("templates")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 @app.on_event("startup")
 def on_startup():
-    db.init_db()
-    cases = db.get_all_cases()
-    if not cases:
-        print("Empty database detected. Seeding 7 realistic cases...")
-        seed.seed_database(force=True)
+    try:
+        db.init_db()
+        cases = db.get_all_cases()
+        if not cases:
+            print("Empty database detected. Seeding 7 realistic cases...")
+            seed.seed_database(force=True)
+    except Exception as e:
+        print(f"Startup initialization notice: {e}")
 
 # Helper to get current role from cookies
 def get_current_role(request: Request) -> str:

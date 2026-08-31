@@ -1,21 +1,58 @@
 import sqlite3
 import os
+import shutil
 from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any, Optional, Tuple
 
-PROJECT_DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pramaan.db")
+def _get_db_path() -> str:
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(base_dir, "pramaan.db"),
+        os.path.join(os.getcwd(), "pramaan.db"),
+        os.path.join("/var/task", "pramaan.db"),
+        os.path.join("/var/task/api", "pramaan.db"),
+    ]
+    seed_db = None
+    for cand in candidates:
+        if os.path.exists(cand) and os.path.getsize(cand) > 0:
+            seed_db = cand
+            break
 
-if os.environ.get("VERCEL"):
-    import shutil
-    DB_PATH = "/tmp/pramaan.db"
-    if not os.path.exists(DB_PATH):
-        if os.path.exists(PROJECT_DB) and os.path.getsize(PROJECT_DB) > 0:
-            try:
-                shutil.copyfile(PROJECT_DB, DB_PATH)
-            except Exception as e:
-                print(f"Error copying initial DB: {e}")
-else:
-    DB_PATH = PROJECT_DB
+    is_serverless = bool(
+        os.environ.get("VERCEL") or
+        os.environ.get("AWS_LAMBDA_FUNCTION_NAME") or
+        os.environ.get("NOW_REGION") or
+        os.environ.get("VERCEL_ENV")
+    )
+
+    if is_serverless:
+        target_db = "/tmp/pramaan.db"
+        if not os.path.exists(target_db) or os.path.getsize(target_db) == 0:
+            if seed_db and os.path.exists(seed_db):
+                try:
+                    shutil.copyfile(seed_db, target_db)
+                except Exception as e:
+                    print(f"Notice: copying initial DB: {e}")
+        return target_db
+
+    # Check local writeability
+    try:
+        test_file = os.path.join(base_dir, ".write_test")
+        with open(test_file, "w") as f:
+            f.write("1")
+        os.remove(test_file)
+        return os.path.join(base_dir, "pramaan.db")
+    except Exception:
+        target_db = "/tmp/pramaan.db"
+        if not os.path.exists(target_db) or os.path.getsize(target_db) == 0:
+            if seed_db and os.path.exists(seed_db):
+                try:
+                    shutil.copyfile(seed_db, target_db)
+                except Exception:
+                    pass
+        return target_db
+
+DB_PATH = _get_db_path()
 
 EXPECTED_DOCS_BY_TYPE = {
     "Road Accident": ["MLC Entry", "Injury Certificate", "X-Ray Report", "Final Opinion"],
@@ -24,7 +61,8 @@ EXPECTED_DOCS_BY_TYPE = {
 }
 
 def _raw_connection():
-    conn = sqlite3.connect(DB_PATH)
+    db_path = _get_db_path()
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -32,17 +70,29 @@ _db_initialized = False
 
 def get_db():
     global _db_initialized
-    if not _db_initialized:
+    db_path = _get_db_path()
+    if not os.path.exists(db_path) or os.path.getsize(db_path) == 0:
         _db_initialized = True
-        if not os.path.exists(DB_PATH) or os.path.getsize(DB_PATH) == 0:
-            init_db()
-            try:
+        init_db()
+        try:
+            import seed
+            seed.seed_database(force=True)
+        except Exception as e:
+            print(f"Seed error: {e}")
+    elif not _db_initialized:
+        _db_initialized = True
+        init_db()
+        try:
+            conn = _raw_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) as count FROM cases")
+            row = cursor.fetchone()
+            conn.close()
+            if not row or row["count"] == 0:
                 import seed
                 seed.seed_database(force=True)
-            except Exception as e:
-                print(f"Seed error: {e}")
-        else:
-            init_db()
+        except Exception as e:
+            print(f"Seed check error: {e}")
     return _raw_connection()
 
 def init_db():
@@ -96,9 +146,9 @@ def init_db():
             case_id INTEGER,
             record_id INTEGER,
             action TEXT NOT NULL,
-            actor_name TEXT NOT NULL,
-            actor_role TEXT NOT NULL,
-            timestamp TEXT NOT NULL
+            actor TEXT NOT NULL,
+            role TEXT NOT NULL,
+            created_at TEXT NOT NULL
         )
         """)
 
@@ -106,9 +156,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS anchors (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             chain_head_hash TEXT NOT NULL,
-            record_count INTEGER NOT NULL,
-            snapshot_time TEXT NOT NULL,
-            witness_signature TEXT NOT NULL,
+            records_sealed INTEGER NOT NULL,
             created_at TEXT NOT NULL
         )
         """)
