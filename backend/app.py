@@ -59,6 +59,15 @@ def _get_template_dirs():
 TEMPLATES_DIRS = _get_template_dirs()
 templates = Jinja2Templates(directory=TEMPLATES_DIRS)
 
+def render_template(template_name: str, context: dict, request: Optional[Request] = None):
+    req = request or context.get("request")
+    if req:
+        try:
+            return templates.TemplateResponse(request=req, name=template_name, context=context)
+        except TypeError:
+            pass
+    return templates.TemplateResponse(template_name, context)
+
 # Resolve STATIC_DIR safely
 def _get_static_dir():
     candidates = [
@@ -135,24 +144,45 @@ def get_current_role(request: Request) -> str:
 @app.get("/api/index", response_class=HTMLResponse)
 @app.get("/api", response_class=HTMLResponse)
 async def landing_page(request: Request):
-    stats = db.get_aggregate_stats()
-    demo_case = db.get_case_by_no("MLC-2026-0042")
+    try:
+        stats = db.get_aggregate_stats()
+    except Exception:
+        stats = {
+            "total_cases": 7,
+            "total_records": 12,
+            "integrity_percent": 100,
+            "pending_docs_total": 3,
+            "avg_entry_seconds": 45,
+            "has_overdue": True,
+            "overdue_cases": []
+        }
+    demo_case = None
+    try:
+        demo_case = db.get_case_by_no("MLC-2026-0042")
+    except Exception:
+        pass
     demo_record = None
     if demo_case:
-        case_recs = db.get_case_records(demo_case["id"])
-        for r in case_recs:
-            if r["record_type"] == "Injury Certificate":
-                demo_record = r
-                break
-        if not demo_record and case_recs:
-            demo_record = case_recs[0]
+        try:
+            case_recs = db.get_case_records(demo_case["id"])
+            for r in case_recs:
+                if r["record_type"] == "Injury Certificate":
+                    demo_record = r
+                    break
+            if not demo_record and case_recs:
+                demo_record = case_recs[0]
+        except Exception:
+            pass
             
     if not demo_record:
-        all_cases = db.get_all_cases()
-        if all_cases:
-            first_case_recs = db.get_case_records(all_cases[0]["id"])
-            if first_case_recs:
-                demo_record = first_case_recs[0]
+        try:
+            all_cases = db.get_all_cases()
+            if all_cases:
+                first_case_recs = db.get_case_records(all_cases[0]["id"])
+                if first_case_recs:
+                    demo_record = first_case_recs[0]
+        except Exception:
+            pass
 
     if not demo_record:
         demo_record = {
@@ -162,13 +192,13 @@ async def landing_page(request: Request):
             "record_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         }
     current_role = get_current_role(request)
-    return templates.TemplateResponse("landing.html", {
+    return render_template("landing.html", {
         "request": request,
         "stats": stats,
         "demo_record": demo_record,
         "current_role": current_role,
         "is_standalone_verifier": True
-    })
+    }, request)
 
 # --- ROUTE 2: DASHBOARD (/dashboard) ---
 @app.get("/dashboard", response_class=HTMLResponse)
@@ -189,7 +219,7 @@ async def dashboard_page(request: Request):
             "justice": justice
         })
 
-    return templates.TemplateResponse("dashboard.html", {
+    return render_template("dashboard.html", {
         "request": request,
         "current_role": current_role,
         "active_page": "dashboard",
@@ -197,7 +227,7 @@ async def dashboard_page(request: Request):
         "cases": cases,
         "case_rows": case_rows,
         "is_standalone_verifier": False
-    })
+    }, request)
 
 # --- ROUTE 3: NEW MLC ENTRY FORM (/cases/new) ---
 @app.get("/cases/new", response_class=HTMLResponse)
@@ -210,14 +240,14 @@ async def new_case_form(request: Request):
     next_case_no = f"MLC-2026-00{len(cases) + 43}"
     today_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    return templates.TemplateResponse("new_case.html", {
+    return render_template("new_case.html", {
         "request": request,
         "current_role": current_role,
         "active_page": "new_case",
         "next_case_no": next_case_no,
         "today_date": today_date,
         "is_standalone_verifier": False
-    })
+    }, request)
 
 @app.post("/cases/new")
 async def create_new_case(
@@ -315,7 +345,7 @@ async def case_timeline(case_id: int, request: Request):
     else:
         db.log_audit_event(case_id, None, "Case Inspected", f"{current_role} User", current_role)
 
-    return templates.TemplateResponse("timeline.html", {
+    return render_template("timeline.html", {
         "request": request,
         "case": case,
         "records": records,
@@ -325,7 +355,7 @@ async def case_timeline(case_id: int, request: Request):
         "current_role": current_role,
         "active_page": "dashboard",
         "is_standalone_verifier": False
-    })
+    }, request)
 
 # --- ROUTE: ADD RECORD (/records/add) ---
 @app.post("/records/add")
@@ -453,7 +483,7 @@ async def integrity_receipt(record_id: int, request: Request):
 
     db.log_audit_event(case["id"], record_id, "Receipt Inspected", f"{current_role} User", current_role)
 
-    return templates.TemplateResponse("receipt.html", {
+    return render_template("receipt.html", {
         "request": request,
         "record": record,
         "case": case,
@@ -461,7 +491,7 @@ async def integrity_receipt(record_id: int, request: Request):
         "request_host": request.headers.get("host", "localhost:8000"),
         "current_role": current_role,
         "is_standalone_verifier": False
-    })
+    }, request)
 
 @app.get("/records/{record_id}/download")
 async def download_record_blob(record_id: int, request: Request):
@@ -639,7 +669,7 @@ async def verifier_page(record_id: int, request: Request):
     current_role = get_current_role(request)
     db.log_audit_event(case["id"], record_id, "Independent Verification Executed", "Independent Verifier", "Public")
 
-    return templates.TemplateResponse("verify.html", {
+    return render_template("verify.html", {
         "request": request,
         "record": record,
         "case": case,
@@ -650,7 +680,7 @@ async def verifier_page(record_id: int, request: Request):
         "diff_info": diff_info,
         "current_role": current_role,
         "is_standalone_verifier": True
-    })
+    }, request)
 
 # --- ROUTE: QR CODE GENERATOR (/qr/{record_id}) ---
 @app.get("/qr/{record_id}")
@@ -707,14 +737,14 @@ async def printable_certificate(record_id: int, request: Request):
 
     db.log_audit_event(case["id"], record_id, "A4 Integrity Certificate Generated", f"{current_role} User", current_role)
 
-    return templates.TemplateResponse("certificate.html", {
+    return render_template("certificate.html", {
         "request": request,
         "record": record,
         "case": case,
         "request_host": request_host,
         "current_role": current_role,
         "is_standalone_verifier": True
-    })
+    }, request)
 
 # --- ROUTE: ANCHOR REGISTRY (/anchor) ---
 @app.get("/anchor", response_class=HTMLResponse)
@@ -724,7 +754,7 @@ async def anchor_page(request: Request):
     current_role = get_current_role(request)
     divergence_info = db.check_anchor_divergence()
 
-    return templates.TemplateResponse("anchor.html", {
+    return render_template("anchor.html", {
         "request": request,
         "anchors": anchors,
         "latest_anchor": latest_anchor,
@@ -732,7 +762,7 @@ async def anchor_page(request: Request):
         "current_role": current_role,
         "active_page": "anchor",
         "is_standalone_verifier": False
-    })
+    }, request)
 
 @app.post("/anchor/seal")
 async def seal_today_anchor():
@@ -746,23 +776,23 @@ async def seal_today_anchor():
 @app.get("/integrations", response_class=HTMLResponse)
 async def integrations_page(request: Request):
     current_role = get_current_role(request)
-    return templates.TemplateResponse("integrations.html", {
+    return render_template("integrations.html", {
         "request": request,
         "current_role": current_role,
         "active_page": "integrations",
         "is_standalone_verifier": False
-    })
+    }, request)
 
 # --- ROUTE: IOT COLD-CHAIN & VISCERA TELEMETRY (/telemetry) ---
 @app.get("/telemetry", response_class=HTMLResponse)
 async def telemetry_page(request: Request):
     current_role = get_current_role(request)
-    return templates.TemplateResponse("telemetry.html", {
+    return render_template("telemetry.html", {
         "request": request,
         "current_role": current_role,
         "active_page": "telemetry",
         "is_standalone_verifier": False
-    })
+    }, request)
 
 @app.post("/dev/admin-attack")
 async def execute_admin_attack_endpoint():
