@@ -140,33 +140,50 @@
 
       <!-- Main App Content Area -->
       <div class="flex-1 flex flex-col min-w-0">
-        <!-- Top App Bar with Sarvam AI Language Switcher & Blockchain Node -->
-        <header class="h-16 bg-white border-b border-ledgerborder px-6 flex items-center justify-between z-10 sticky top-0">
+        <!-- Top App Bar with Role Switcher, Sarvam AI Language Switcher & Blockchain Node -->
+        <header class="h-16 bg-white border-b border-ledgerborder px-6 flex items-center justify-between z-10 sticky top-0 shadow-sm">
           <div class="flex items-center gap-3">
             <div class="kicker">{% block kicker %}Govt. District Hospital · Medico-Legal Registry{% endblock %}</div>
           </div>
 
-          <!-- Top Right Controls: Sarvam AI Indic Switcher & Blockchain Node -->
+          <!-- Top Right Controls: Role Switcher, Sarvam AI Indic Switcher & Blockchain Node -->
           <div class="flex items-center gap-3">
+            <!-- Interactive Role Persona Switcher (RBAC) -->
+            <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
+              <span class="text-slate-500 font-semibold text-[10px] uppercase px-1 hidden md:inline">Role:</span>
+              <button onclick="switchUserRole('Hospital')" class="px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 transition-all {% if current_role == 'Hospital' %}bg-white text-navy shadow-sm border border-slate-300 font-bold{% else %}text-slate-600 hover:text-navy{% endif %}" title="Hospital CMO / Examiner (Full Intake & Sealing)">
+                <span>🏥</span>
+                <span class="hidden sm:inline">Hospital</span>
+              </button>
+              <button onclick="switchUserRole('Police')" class="px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 transition-all {% if current_role == 'Police' %}bg-white text-blue-900 shadow-sm border border-blue-300 font-bold{% else %}text-slate-600 hover:text-blue-900{% endif %}" title="Investigating Officer (CCTNS Sync & BNSS Timelines)">
+                <span>🚔</span>
+                <span class="hidden sm:inline">Police</span>
+              </button>
+              <button onclick="switchUserRole('Court')" class="px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 transition-all {% if current_role == 'Court' %}bg-white text-purple-900 shadow-sm border border-purple-300 font-bold{% else %}text-slate-600 hover:text-purple-900{% endif %}" title="Magistrate / Court (Sec 63 BSA Admissibility Audit)">
+                <span>⚖️</span>
+                <span class="hidden sm:inline">Court</span>
+              </button>
+            </div>
+
             <!-- Sarvam AI Multilingual Switcher -->
             <div class="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 text-xs">
-              <span class="text-slate-500 font-medium text-[11px]">Language:</span>
+              <span class="text-slate-500 font-medium text-[11px] hidden sm:inline">Language:</span>
               <select onchange="changeLanguage(this.value)" class="bg-transparent font-semibold text-navy focus:outline-none cursor-pointer text-xs">
                 <option value="en">🇬🇧 English</option>
                 <option value="hi">🇮🇳 हिंदी (Hindi)</option>
                 <option value="mr">🇮🇳 मराठी (Marathi)</option>
                 <option value="ta">🇮🇳 தமிழ் (Tamil)</option>
-                <option value="te">🇮🇳 తెలుగు (Telugu)</option>
+                <option value="te">🇮🇳 Telugu (తెలుగు)</option>
                 <option value="bn">🇮🇳 বাংলা (Bengali)</option>
               </select>
-              <span class="text-[9px] px-1 py-0.5 rounded bg-indigo-100 text-indigo-800 font-bold ml-1" title="Powered by Sarvam AI Indic Engine">Sarvam AI</span>
+              <span class="text-[9px] px-1 py-0.5 rounded bg-indigo-100 text-indigo-800 font-bold ml-1 hidden sm:inline" title="Powered by Sarvam AI Indic Engine">Sarvam AI</span>
             </div>
 
             <!-- Blockchain On-Chain Status Pill -->
-            <div class="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold uppercase tracking-wider">
+            <button onclick="openBlockchainModal('0x91F5C7A87A656a297E59b2d8cD6d3F3e4F2bc842', 19842045, 1)" class="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer" title="Click to inspect smart contract on Polygon PoS">
               <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              Polygon On-Chain
-            </div>
+              <span>Polygon On-Chain</span>
+            </button>
           </div>
         </header>
 

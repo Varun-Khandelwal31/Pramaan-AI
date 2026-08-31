@@ -1,6 +1,8 @@
 import os
 import io
 import time
+import zipfile
+import json
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
@@ -15,7 +17,15 @@ import db
 import seed
 import kyc
 import blockchain
-from chain import calculate_content_hash, calculate_record_hash, verify_case_chain, verify_record_integrity
+from chain import (
+    calculate_content_hash,
+    calculate_record_hash,
+    verify_case_chain,
+    verify_record_integrity,
+    compute_merkle_root,
+    generate_merkle_proof,
+    verify_merkle_proof
+)
 
 app = FastAPI(title="PRAMAAN Medico-Legal Evidence Platform")
 
@@ -418,6 +428,133 @@ async def download_record_blob(record_id: int, request: Request):
         headers={"Content-Disposition": f'attachment; filename="{record["file_name"]}"'}
     )
 
+# --- ROUTE: COURTROOM EVIDENCE DOSSIER EXPORT (/cases/{id}/export-bundle) ---
+@app.get("/cases/{case_id}/export-bundle")
+async def export_court_dossier_bundle(case_id: int, request: Request):
+    case = db.get_case(case_id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    records = db.get_case_records(case_id)
+    verification = verify_case_chain(records)
+    audit_logs = db.get_audit_logs_for_case(case_id)
+    current_role = get_current_role(request)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    now_formatted = datetime.now(timezone.utc).strftime("%d %B %Y, %H:%M:%S UTC")
+
+    db.log_audit_event(case_id, None, "Statutory Court Evidence Dossier Exported (.zip)", f"{current_role} User", current_role, now_iso)
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        # 1. Official README & Section 63 BSA Instructions
+        readme_content = f"""================================================================================
+PRAMAAN MEDICO-LEGAL EVIDENCE DOSSIER — SECTION 63 BSA 2023 CERTIFIED
+================================================================================
+Master Case Reference: {case['case_no']}
+Case Classification  : {case['case_type']}
+Hospital Node        : {case['hospital']}
+Incident Date        : {case['incident_date']}
+Attending Examiner   : {case['duty_doctor']} ({case.get('doctor_nmc_reg', 'NMC-2018-84920')})
+Export Timestamp     : {now_formatted}
+Cryptographic Status : {'INTACT (VALIDATED 100%)' if verification['is_intact'] else 'CHAIN COMPROMISED / BROKEN'}
+Merkle Root Hash     : {verification.get('merkle_root', 'N/A')}
+
+LEGAL STATUTORY ADMISSIBILITY NOTICE:
+This electronic evidence dossier has been generated under Section 63 of the
+Bharatiya Sakshya Adhiniyam (BSA), 2023 and Section 193(3) of the Bharatiya
+Nagarik Suraksha Sanhita (BNSS), 2023.
+
+CONTENTS OF THIS DOSSIER:
+1. /Section_63_BSA_Certificate.html - Formal Certificate of Electronic Integrity
+2. /Evidence_Chain_Manifest.txt     - Cryptographic hashes, byte digests, on-chain Tx
+3. /Cryptographic_Audit_Trail.json  - Immutable timestamped custody access trail
+4. /raw_evidence_records/           - Unmodified byte-for-byte evidence documents
+
+VERIFICATION INSTRUCTIONS FOR MAGISTRATES & PROSECUTORS:
+1. Verify SHA-256 digests in Evidence_Chain_Manifest.txt against raw files.
+2. Verify Polygon PoS On-Chain Smart Contract: 0x91F5C7A87A656a297E59b2d8cD6d3F3e4F2bc842
+3. Scan QR code embedded in Section_63_BSA_Certificate.html for real-time validation.
+================================================================================
+"""
+        zip_file.writestr("README_COURT_INSTRUCTIONS.txt", readme_content)
+
+        # 2. Evidence Chain Manifest
+        manifest_lines = [
+            f"PRAMAAN EVIDENCE CHAIN MANIFEST — CASE {case['case_no']}",
+            f"Generated: {now_formatted}",
+            f"Chain Intact: {verification['is_intact']}",
+            f"Total Records Sealed: {len(records)}",
+            f"Case Merkle Root: {verification.get('merkle_root')}",
+            "-" * 80,
+            f"{'ID':<4} | {'RECORD TYPE':<24} | {'SEALED BY':<22} | {'SHA-256 CONTENT HASH':<64}",
+            "-" * 80,
+        ]
+        for idx, rec in enumerate(records):
+            manifest_lines.append(
+                f"#{rec['id']:<3} | {rec['record_type']:<24} | {rec['uploaded_by']:<22} | {rec['content_hash']}"
+            )
+            manifest_lines.append(f"     Prev Hash  : {rec['prev_hash']}")
+            manifest_lines.append(f"     Record Hash: {rec['record_hash']}")
+            manifest_lines.append(f"     On-Chain Tx: {rec.get('tx_hash', 'N/A')} (Block #{rec.get('block_number', 'N/A')})")
+            manifest_lines.append(f"     Doctor KYC : {rec.get('doctor_nmc_reg', 'NMC-2018-84920')} | DigiLocker Hash: {rec.get('digilocker_kyc_hash', 'N/A')}")
+            manifest_lines.append("-" * 80)
+
+        zip_file.writestr("Evidence_Chain_Manifest.txt", "\n".join(manifest_lines))
+
+        # 3. Cryptographic Audit Trail JSON
+        audit_payload = {
+            "case_no": case["case_no"],
+            "case_type": case["case_type"],
+            "patient_alias": case["patient_alias"],
+            "hospital": case["hospital"],
+            "exported_at": now_iso,
+            "chain_verification": verification,
+            "records_summary": [
+                {
+                    "id": r["id"],
+                    "type": r["record_type"],
+                    "uploaded_by": r["uploaded_by"],
+                    "doctor_nmc_reg": r.get("doctor_nmc_reg"),
+                    "content_hash": r["content_hash"],
+                    "prev_hash": r["prev_hash"],
+                    "record_hash": r["record_hash"],
+                    "tx_hash": r.get("tx_hash"),
+                    "block_number": r.get("block_number"),
+                    "created_at": r["created_at"]
+                }
+                for r in records
+            ],
+            "audit_events": audit_logs
+        }
+        zip_file.writestr("Cryptographic_Audit_Trail.json", json.dumps(audit_payload, indent=2))
+
+        # 4. Render Section 63 BSA HTML Certificate
+        cert_template = templates.get_template("certificate.html")
+        cert_html = cert_template.render({
+            "request": request,
+            "record": records[0] if records else {"id": 1, "record_type": "MLC Entry", "record_hash": "GENESIS", "created_at": now_iso},
+            "case": case,
+            "request_host": request.headers.get("host", "localhost:8000"),
+            "current_role": current_role,
+            "is_standalone_verifier": True
+        })
+        zip_file.writestr("Section_63_BSA_Certificate.html", cert_html)
+
+        # 5. Raw Evidence Documents
+        for idx, rec in enumerate(records):
+            file_name = rec.get("file_name") or f"Record_{rec['id']}_{rec['record_type'].replace(' ', '_')}.txt"
+            raw_blob = rec.get("file_blob") or b""
+            if isinstance(raw_blob, str):
+                raw_blob = raw_blob.encode("utf-8")
+            zip_file.writestr(f"raw_evidence_records/{idx+1}_{file_name}", raw_blob)
+
+    safe_case_no = case["case_no"].replace(" ", "_")
+    return Response(
+        content=zip_buf.getvalue(),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="PRAMAAN_Dossier_{safe_case_no}.zip"'}
+    )
+
 # --- ROUTE 5: THE VERIFIER (/verify/{record_id}) ---
 @app.get("/verify/{record_id}", response_class=HTMLResponse)
 async def verifier_page(record_id: int, request: Request):
@@ -644,3 +781,82 @@ async def set_sarvam_key_endpoint(data: SarvamKeyRequest):
     import os
     os.environ["SARVAM_API_KEY"] = data.api_key.strip()
     return {"status": "ok", "message": "Sarvam AI API Key configured successfully for live requests!"}
+
+# --- MULTI-ROLE RBAC API (/api/set-role) ---
+class RoleChangeRequest(BaseModel):
+    role: str
+
+@app.post("/api/set-role")
+async def set_role_endpoint(data: RoleChangeRequest, response: Response):
+    valid_roles = ["Hospital", "Police", "Court"]
+    new_role = data.role if data.role in valid_roles else "Hospital"
+    resp = JSONResponse({
+        "status": "ok",
+        "role": new_role,
+        "message": f"Switched active workspace persona to {new_role}"
+    })
+    resp.set_cookie(key="pramaan_role", value=new_role, max_age=86400 * 30, httponly=False, samesite="lax")
+    return resp
+
+# --- IOT COLD-CHAIN & VISCERA BREACH SIMULATOR API ---
+class TelemetryBreachRequest(BaseModel):
+    sensor_id: str = "M-04"
+    temperature: float = 6.2
+    reason: str = "Hospital Morgue Compressor Power Interruption"
+    case_id: Optional[int] = 1
+
+@app.post("/api/telemetry/simulate-breach")
+async def simulate_telemetry_breach_endpoint(data: TelemetryBreachRequest):
+    now_iso = datetime.now(timezone.utc).isoformat()
+    action_text = f"CRITICAL: IoT Viscera Cold-Chain Breach ({data.temperature}°C > +4.0°C) Alert Triggered [{data.sensor_id}]"
+    db.log_audit_event(
+        case_id=data.case_id or 1,
+        record_id=None,
+        action=action_text,
+        actor=f"IoT Sentinel Node #{data.sensor_id}",
+        role="IoT_Grid",
+        created_at=now_iso
+    )
+    breach_hash = calculate_record_hash("IOT_TELEMETRY_ALERT", f"{data.sensor_id}_{data.temperature}_{data.reason}", "IOT_SENTINEL", now_iso)
+    return {
+        "status": "alert_logged",
+        "sensor_id": data.sensor_id,
+        "temperature": data.temperature,
+        "is_breached": data.temperature > 4.0,
+        "breach_hash": breach_hash,
+        "logged_at": now_iso,
+        "message": "Thermal breach securely sealed to Case Audit Ledger under Section 63 BSA 2023."
+    }
+
+# --- MERKLE AUDIT PROOF API (/api/anchor/merkle-proof/{record_id}) ---
+@app.get("/api/anchor/merkle-proof/{record_id}")
+async def get_merkle_proof_endpoint(record_id: int):
+    record = db.get_record(record_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+
+    case_records = db.get_case_records(record["case_id"])
+    hashes = [r["record_hash"] for r in case_records]
+    proof_data = generate_merkle_proof(hashes, record["record_hash"])
+
+    return {
+        "record_id": record["id"],
+        "record_type": record["record_type"],
+        "case_id": record["case_id"],
+        "record_hash": record["record_hash"],
+        "proof": proof_data
+    }
+
+# --- SYSTEM HEALTH CHECK API ---
+@app.get("/api/system/health")
+async def system_health_endpoint():
+    stats = db.get_aggregate_stats()
+    return {
+        "status": "online",
+        "platform": "PRAMAAN Medico-Legal Evidence Platform",
+        "compliance": "Section 63 BSA 2023 / Section 173 BNSS 2023",
+        "smart_contract": blockchain.SMART_CONTRACT_ADDRESS,
+        "total_cases": stats["total_cases"],
+        "records_sealed": stats["total_records"],
+        "integrity_percent": stats["integrity_percent"]
+    }

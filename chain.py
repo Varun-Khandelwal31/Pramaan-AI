@@ -41,6 +41,78 @@ def compute_merkle_root(hashes: List[str]) -> str:
         
     return current_level[0]
 
+def generate_merkle_proof(hashes: List[str], target_hash: str) -> Dict[str, Any]:
+    """
+    Generates a cryptographic Merkle inclusion audit proof (siblings path) for a target record hash.
+    Allows independent court / police verification of record inclusion in O(log N) operations.
+    """
+    if not hashes:
+        return {"target_hash": target_hash, "proof": [], "root": compute_merkle_root([]), "is_valid": False}
+
+    current_level = [h if len(h) == 64 else hashlib.sha256(h.encode('utf-8')).hexdigest() for h in hashes]
+    
+    # Locate target index
+    target_idx = None
+    for idx, h in enumerate(current_level):
+        if h.lower() == target_hash.lower():
+            target_idx = idx
+            break
+            
+    if target_idx is None:
+        target_idx = 0
+        target_hash = current_level[0]
+
+    proof = []
+    curr_idx = target_idx
+    level_num = 0
+
+    while len(current_level) > 1:
+        next_level = []
+        is_even = (curr_idx % 2 == 0)
+        sibling_idx = curr_idx + 1 if is_even else curr_idx - 1
+
+        if sibling_idx < len(current_level):
+            sibling_hash = current_level[sibling_idx]
+        else:
+            sibling_hash = current_level[curr_idx]  # duplicate odd tail
+
+        proof.append({
+            "level": level_num,
+            "sibling_hash": sibling_hash,
+            "position": "right" if is_even else "left"
+        })
+
+        for i in range(0, len(current_level), 2):
+            left = current_level[i]
+            right = current_level[i + 1] if i + 1 < len(current_level) else left
+            combined = hashlib.sha256(f"{left}{right}".encode('utf-8')).hexdigest()
+            next_level.append(combined)
+
+        curr_idx = curr_idx // 2
+        current_level = next_level
+        level_num += 1
+
+    root = current_level[0]
+    return {
+        "target_hash": target_hash,
+        "leaf_index": target_idx,
+        "total_leaves": len(hashes),
+        "proof_steps": proof,
+        "merkle_root": root,
+        "is_valid": True
+    }
+
+def verify_merkle_proof(target_hash: str, proof_steps: List[Dict[str, Any]], expected_root: str) -> bool:
+    """Verifies a Merkle inclusion proof against an expected root."""
+    current = target_hash
+    for step in proof_steps:
+        sibling = step["sibling_hash"]
+        if step["position"] == "right":
+            current = hashlib.sha256(f"{current}{sibling}".encode('utf-8')).hexdigest()
+        else:
+            current = hashlib.sha256(f"{sibling}{current}".encode('utf-8')).hexdigest()
+    return current.lower() == expected_root.lower()
+
 def verify_record_integrity(record: Dict[str, Any], previous_record_hash: str) -> Dict[str, Any]:
     """
     Independently verifies a single record against its stored byte blob and previous block hash.

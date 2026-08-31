@@ -63,40 +63,50 @@ document.addEventListener('DOMContentLoaded', () => {
       accident: {
         alias: 'Ramesh Kumar, 34M',
         type: 'Road Accident',
-        date: formattedDate,
+        date: formattedDate.slice(0, 10),
         doctor: 'Dr. A. Sharma, CMO',
-        summary: 'Blunt trauma head, suspected compound fracture right tibia-fibula following high-speed RTA hit-and-run at Ring Road Junction. Active scalp bleeding, GCS 13/15.',
-        content: `MEDICO-LEGAL CERTIFICATE (EMERGENCY INTAKE)
-Patient: Ramesh Kumar, 34/M
-Date: ${formattedDate}
-Type: RTA Hit & Run
-Vitals: BP 90/60, Pulse 118 bpm, GCS 13/15 (E3V4M6)
-Injuries: Deep laceration over right parietal scalp (6x2cm bone deep), deformed right lower limb with active bleeding.
-Provisional Opinion: Grievous blunt force trauma.`
+        summary: 'Blunt trauma head, compound fracture right tibia-fibula following high-speed RTA hit-and-run at Ring Road Junction. Active scalp bleeding, GCS 13/15.',
+        content: `MEDICO-LEGAL CERTIFICATE (EMERGENCY INTAKE)\nPatient: Ramesh Kumar, 34/M\nDate: ${formattedDate}\nType: RTA Hit & Run\nVitals: BP 90/60, Pulse 118 bpm, GCS 13/15 (E3V4M6)\nInjuries: Deep laceration over right parietal scalp (6x2cm bone deep), deformed right lower limb with active bleeding.\nProvisional Opinion: Grievous blunt force trauma.`
+      },
+      road_trauma: {
+        alias: 'Ramesh Kumar, 34M',
+        type: 'Road Accident',
+        date: formattedDate.slice(0, 10),
+        doctor: 'Dr. A. Sharma, CMO',
+        summary: 'Blunt trauma head, compound fracture right tibia-fibula following high-speed RTA hit-and-run at Ring Road Junction. Active scalp bleeding, GCS 13/15.',
+        content: `MEDICO-LEGAL CERTIFICATE (EMERGENCY INTAKE)\nPatient: Ramesh Kumar, 34/M\nDate: ${formattedDate}\nType: RTA Hit & Run\nVitals: BP 90/60, Pulse 118 bpm, GCS 13/15 (E3V4M6)\nInjuries: Deep laceration over right parietal scalp (6x2cm bone deep), deformed right lower limb with active bleeding.\nProvisional Opinion: Grievous blunt force trauma.`
       },
       assault: {
         alias: 'Suresh Patel, 28M',
         type: 'Assault',
-        date: formattedDate,
+        date: formattedDate.slice(0, 10),
         doctor: 'Dr. A. Sharma, CMO',
         summary: 'Multiple defense wounds over bilateral forearms, incised laceration 4cm over left zygomatic arch inflicted with sharp weapon during street altercation.',
-        content: `MEDICO-LEGAL EMERGENCY INTAKE - PHYSICAL ASSAULT
-Patient: Suresh Patel, 28/M
-Incident: Physical altercation with sharp weapon
-Injuries: Incised wound 4x0.5cm over left zygomatic region, contusions on bilateral forearms.
-Examining Officer: Dr. A. Sharma, CMO (NMC-2018-84920)`
+        content: `MEDICO-LEGAL EMERGENCY INTAKE - PHYSICAL ASSAULT\nPatient: Suresh Patel, 28/M\nIncident: Physical altercation with sharp weapon\nInjuries: Incised wound 4x0.5cm over left zygomatic region, contusions on bilateral forearms.\nExamining Officer: Dr. A. Sharma, CMO (NMC-2018-84920)`
+      },
+      assault_emergency: {
+        alias: 'Suresh Patel, 28M',
+        type: 'Assault',
+        date: formattedDate.slice(0, 10),
+        doctor: 'Dr. A. Sharma, CMO',
+        summary: 'Multiple defense wounds over bilateral forearms, incised laceration 4cm over left zygomatic arch inflicted with sharp weapon during street altercation.',
+        content: `MEDICO-LEGAL EMERGENCY INTAKE - PHYSICAL ASSAULT\nPatient: Suresh Patel, 28/M\nIncident: Physical altercation with sharp weapon\nInjuries: Incised wound 4x0.5cm over left zygomatic region, contusions on bilateral forearms.\nExamining Officer: Dr. A. Sharma, CMO (NMC-2018-84920)`
       },
       pocso: {
         alias: 'Minor Subject (Confidential)',
         type: 'POCSO Case',
-        date: formattedDate,
+        date: formattedDate.slice(0, 10),
         doctor: 'Dr. N. Joshi, Gynaecologist',
         summary: 'Statutory confidential medical examination requisitioned by Special Juvenile Police Unit under POCSO Act §33 / DPDP 2023. Biological specimen kit sealed.',
-        content: `POCSO CONFIDENTIAL EMERGENCY INTAKE
-Case: Statutory Child Protection Proceeding
-Doctor: Dr. N. Joshi, Gynaecologist (NMC-2016-72819)
-Victim Identity Protected under Section 33, POCSO Act 2012.
-Preliminary examination completed in presence of female medical officer and legal support person.`
+        content: `POCSO CONFIDENTIAL EMERGENCY INTAKE\nCase: Statutory Child Protection Proceeding\nDoctor: Dr. N. Joshi, Gynaecologist (NMC-2016-72819)\nVictim Identity Protected under Section 33, POCSO Act 2012.\nPreliminary examination completed in presence of female medical officer and legal support person.`
+      },
+      pocso_protected: {
+        alias: 'Minor Subject (Confidential)',
+        type: 'POCSO Case',
+        date: formattedDate.slice(0, 10),
+        doctor: 'Dr. N. Joshi, Gynaecologist',
+        summary: 'Statutory confidential medical examination requisitioned by Special Juvenile Police Unit under POCSO Act §33 / DPDP 2023. Biological specimen kit sealed.',
+        content: `POCSO CONFIDENTIAL EMERGENCY INTAKE\nCase: Statutory Child Protection Proceeding\nDoctor: Dr. N. Joshi, Gynaecologist (NMC-2016-72819)\nVictim Identity Protected under Section 33, POCSO Act 2012.\nPreliminary examination completed in presence of female medical officer and legal support person.`
       }
     };
 
@@ -114,6 +124,7 @@ Preliminary examination completed in presence of female medical officer and lega
 
     window.showToast(`Applied ${data.type} rapid intake preset! Ready to seal.`, 'success');
   };
+  window.applyTraumaPreset = window.applyIntakePreset;
 
   // 5. Client-Side WebCrypto SHA-256 Drag-and-Drop Hasher for Judges (/verify/{id})
   window.handleJudgeDrop = async function(event, expectedContentHash) {
@@ -386,6 +397,25 @@ Preliminary examination completed in presence of female medical officer and lega
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  // 11. Multi-Role Persona Switcher (RBAC)
+  window.switchUserRole = async function(newRole) {
+    try {
+      const resp = await fetch('/api/set-role', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole })
+      });
+      const data = await resp.json();
+      const roleIcons = { Hospital: '🏥', Police: '🚔', Court: '⚖️' };
+      window.showToast(`Switched active workspace to ${roleIcons[newRole] || ''} ${newRole} mode`, 'info', 3000);
+      setTimeout(() => window.location.reload(), 400);
+    } catch (e) {
+      console.error(e);
+      document.cookie = `pramaan_role=${newRole}; path=/; max-age=2592000`;
+      window.location.reload();
     }
   };
 });
