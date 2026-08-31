@@ -122,26 +122,6 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500
     )
 
-# Vercel Internal Rewrite Path Normalizer Middleware
-@app.middleware("http")
-async def vercel_internal_rewrite_middleware(request: Request, call_next):
-    matched_path = request.headers.get("x-matched-path")
-    original_uri = request.headers.get("x-forwarded-uri")
-    path = request.scope.get("path", "")
-
-    if matched_path and not matched_path.startswith("/api/index"):
-        request.scope["path"] = matched_path
-    elif original_uri and not original_uri.startswith("/api/index"):
-        request.scope["path"] = original_uri.split("?")[0]
-    elif path.startswith("/api/index.py"):
-        new_path = path[len("/api/index.py"):]
-        request.scope["path"] = new_path if new_path.startswith("/") else ("/" + new_path)
-    elif path.startswith("/api/index"):
-        new_path = path[len("/api/index"):]
-        request.scope["path"] = new_path if new_path.startswith("/") else ("/" + new_path)
-
-    return await call_next(request)
-
 # Helper to get current role from cookies
 def get_current_role(request: Request) -> str:
     role = request.cookies.get("pramaan_role", "Hospital")
