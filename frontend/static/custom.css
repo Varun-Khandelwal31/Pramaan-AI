@@ -1,0 +1,204 @@
+/* Google Fonts imports handled in HTML head */
+
+:root {
+  --color-navy: #1B2A4A;
+  --color-navy-deep: #131D33;
+  --color-ink: #0F172A;
+  --color-paper: #F8F6F1;
+  --color-gold: #C9A227;
+  --color-gold-soft: #E7C766;
+  --color-emerald: #16A34A;
+  --color-crimson: #DC2626;
+  --color-violet: #7C3AED;
+  --color-border: #E5E0D5;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--color-ink);
+  background-color: var(--color-paper);
+}
+
+.font-fraunces {
+  font-family: 'Fraunces', Georgia, serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Subtle Ledger Grid Background (32px cells at 4% opacity) */
+.ledger-bg {
+  background-color: #F8F6F1;
+  background-image: 
+    linear-gradient(to right, rgba(27, 42, 74, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(27, 42, 74, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Ledger Entry Card */
+.ledger-card {
+  background: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-gold);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.02);
+  transition: all 0.2s ease-in-out;
+}
+
+.ledger-card:hover {
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+}
+
+.ledger-card-amendment {
+  border-left: 4px solid #4F46E5;
+}
+
+.ledger-card-tampered {
+  border-left: 4px solid var(--color-crimson) !important;
+  background-color: #FEF2F2;
+}
+
+/* Kicker Headline formatting */
+.kicker {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #64748B;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kicker::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 2px;
+  background-color: var(--color-gold);
+}
+
+/* Chain Link Line & Nodes */
+.chain-vertical-line {
+  position: absolute;
+  left: 28px;
+  top: 40px;
+  bottom: -20px;
+  width: 2px;
+  background: linear-gradient(to bottom, #C9A227 0%, #C9A227 100%);
+  z-index: 1;
+}
+
+.chain-node-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 2px solid var(--color-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 0 0 4px #F8F6F1;
+}
+
+.chain-node-intact {
+  border-color: var(--color-emerald);
+  color: var(--color-emerald);
+}
+
+.chain-node-broken {
+  border-color: var(--color-crimson);
+  color: var(--color-crimson);
+  background-color: #FEE2E2;
+}
+
+/* Screen Flash Animation for Tamper Alert */
+@keyframes tamperFlash {
+  0% { background-color: rgba(220, 38, 38, 0.15); }
+  50% { background-color: rgba(220, 38, 38, 0.05); }
+  100% { background-color: transparent; }
+}
+
+.tamper-flash {
+  animation: tamperFlash 0.8s ease-out;
+}
+
+/* Slide in animation */
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slideDownFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Toast Container */
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 380px;
+}
+
+.pramaan-toast {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #1B2A4A;
+  color: #FFFFFF;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  border-left: 4px solid var(--color-gold);
+  animation: slideDownFade 0.25s ease-out;
+}
+
+.pramaan-toast-success {
+  border-left-color: var(--color-emerald);
+}
+
+.pramaan-toast-danger {
+  border-left-color: var(--color-crimson);
+}
+
+/* Print Certificate CSS */
+@media print {
+  body {
+    background: #FFFFFF !important;
+    background-image: none !important;
+    color: #000000 !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .certificate-page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 18mm 20mm;
+    margin: 0 auto;
+    box-shadow: none !important;
+    border: 3px double #C9A227 !important;
+    background: #FFFFFF !important;
+  }
+}
