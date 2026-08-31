@@ -83,6 +83,26 @@ def on_startup():
     except Exception as e:
         print(f"Startup initialization notice: {e}")
 
+# Vercel Internal Rewrite Path Normalizer Middleware
+@app.middleware("http")
+async def vercel_internal_rewrite_middleware(request: Request, call_next):
+    matched_path = request.headers.get("x-matched-path")
+    original_uri = request.headers.get("x-forwarded-uri")
+    path = request.scope.get("path", "")
+
+    if matched_path and not matched_path.startswith("/api/index"):
+        request.scope["path"] = matched_path
+    elif original_uri and not original_uri.startswith("/api/index"):
+        request.scope["path"] = original_uri.split("?")[0]
+    elif path.startswith("/api/index.py"):
+        new_path = path[len("/api/index.py"):]
+        request.scope["path"] = new_path if new_path.startswith("/") else ("/" + new_path)
+    elif path.startswith("/api/index"):
+        new_path = path[len("/api/index"):]
+        request.scope["path"] = new_path if new_path.startswith("/") else ("/" + new_path)
+
+    return await call_next(request)
+
 # Helper to get current role from cookies
 def get_current_role(request: Request) -> str:
     role = request.cookies.get("pramaan_role", "Hospital")
@@ -92,6 +112,9 @@ def get_current_role(request: Request) -> str:
 
 # --- ROUTE 1: LANDING PAGE (/) ---
 @app.get("/", response_class=HTMLResponse)
+@app.get("/api/index.py", response_class=HTMLResponse)
+@app.get("/api/index", response_class=HTMLResponse)
+@app.get("/api", response_class=HTMLResponse)
 async def landing_page(request: Request):
     stats = db.get_aggregate_stats()
     demo_case = db.get_case_by_no("MLC-2026-0042")
