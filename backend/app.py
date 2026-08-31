@@ -1,10 +1,16 @@
 import os
+import sys
 import io
 import time
 import zipfile
 import json
 from datetime import datetime, timezone, timedelta
 from typing import Optional
+
+# Ensure project root is in sys.path
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 from fastapi import FastAPI, Request, Form, UploadFile, File, Response, Cookie, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -13,34 +19,18 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import qrcode
 
-try:
-    from backend.database import db, seed
-    from backend.services import kyc, sarvam
-    from backend.core import blockchain
-    from backend.core.chain import (
-        calculate_content_hash,
-        calculate_record_hash,
-        verify_case_chain,
-        verify_record_integrity,
-        compute_merkle_root,
-        generate_merkle_proof,
-        verify_merkle_proof
-    )
-except Exception:
-    import db
-    import seed
-    import kyc
-    import sarvam
-    import blockchain
-    from chain import (
-        calculate_content_hash,
-        calculate_record_hash,
-        verify_case_chain,
-        verify_record_integrity,
-        compute_merkle_root,
-        generate_merkle_proof,
-        verify_merkle_proof
-    )
+from backend.database import db, seed
+from backend.services import kyc, sarvam
+from backend.core import blockchain
+from backend.core.chain import (
+    calculate_content_hash,
+    calculate_record_hash,
+    verify_case_chain,
+    verify_record_integrity,
+    compute_merkle_root,
+    generate_merkle_proof,
+    verify_merkle_proof
+)
 
 app = FastAPI(
     title="PRAMAAN Medico-Legal Evidence Platform",
