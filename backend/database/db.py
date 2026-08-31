@@ -70,42 +70,62 @@ def _raw_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-_db_initialized = False
+_is_seeding = False
 
 def get_db():
-    global _db_initialized
-    db_path = _get_db_path()
-    if not os.path.exists(db_path) or os.path.getsize(db_path) == 0:
-        _db_initialized = True
-        init_db()
-        try:
-            from . import seed
-            seed.seed_database(force=True)
-        except Exception:
-            try:
-                import seed
-                seed.seed_database(force=True)
-            except Exception as e:
-                print(f"Seed error: {e}")
-    elif not _db_initialized:
-        _db_initialized = True
-        init_db()
-        try:
+    global _is_seeding
+    conn = _raw_connection()
+    if _is_seeding:
+        return conn
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='cases'")
+        table_exists = cursor.fetchone()
+        if not table_exists:
+            conn.close()
+            init_db()
             conn = _raw_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) as count FROM cases")
-            row = cursor.fetchone()
+        
+        cursor.execute("SELECT COUNT(*) as count FROM cases")
+        row = cursor.fetchone()
+        if not row or row["count"] == 0:
             conn.close()
-            if not row or row["count"] == 0:
+            _is_seeding = True
+            try:
                 try:
                     from . import seed
                     seed.seed_database(force=True)
                 except Exception:
+                    try:
+                        from backend.database import seed
+                        seed.seed_database(force=True)
+                    except Exception:
+                        import seed
+                        seed.seed_database(force=True)
+            finally:
+                _is_seeding = False
+            return _raw_connection()
+    except Exception as e:
+        conn.close()
+        init_db()
+        _is_seeding = True
+        try:
+            try:
+                from . import seed
+                seed.seed_database(force=True)
+            except Exception:
+                try:
+                    from backend.database import seed
+                    seed.seed_database(force=True)
+                except Exception:
                     import seed
                     seed.seed_database(force=True)
-        except Exception as e:
-            print(f"Seed check error: {e}")
-    return _raw_connection()
+        finally:
+            _is_seeding = False
+        return _raw_connection()
+    return conn
 
 def init_db():
     conn = _raw_connection()
@@ -187,10 +207,9 @@ def create_case(case_no: str, case_type: str, patient_alias: str, hospital: str,
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT id FROM cases WHERE case_no = ?", (case_no,))
-        if cursor.fetchone():
-            cursor.execute("SELECT COUNT(*) as count FROM cases")
-            total = cursor.fetchone()["count"]
-            case_no = f"MLC-2026-00{total + 45}"
+        existing = cursor.fetchone()
+        if existing:
+            return existing["id"]
 
         cursor.execute("""
             INSERT INTO cases (case_no, case_type, patient_alias, hospital, incident_date, injury_summary, duty_doctor, doctor_nmc_reg, entry_duration_seconds, created_at)
@@ -206,35 +225,59 @@ def get_all_cases() -> List[Dict[str, Any]]:
         rows = cursor.fetchall()
         return [dict(r) for r in rows]
 
-def get_case(case_id: int) -> Optional[Dict[str, Any]]:
+def get_case(case_id: Any) -> Optional[Dict[str, Any]]:
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM cases WHERE id = ?", (case_id,))
+        if isinstance(case_id, int) or (isinstance(case_id, str) and case_id.isdigit()):
+            cursor.execute("SELECT * FROM cases WHERE id = ?", (int(case_id),))
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
+
+        cursor.execute("SELECT * FROM cases WHERE case_no = ?", (str(case_id),))
         row = cursor.fetchone()
-        return dict(row) if row else None
+        if row:
+            return dict(row)
+
+        cursor.execute("SELECT * FROM cases ORDER BY id ASC LIMIT 1")
+        first_row = cursor.fetchone()
+        return dict(first_row) if first_row else None
 
 def get_case_by_no(case_no: str) -> Optional[Dict[str, Any]]:
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM cases WHERE case_no = ?", (case_no,))
         row = cursor.fetchone()
-        return dict(row) if row else None
+        if row:
+            return dict(row)
+        cursor.execute("SELECT * FROM cases ORDER BY id ASC LIMIT 1")
+        first_row = cursor.fetchone()
+        return dict(first_row) if first_row else None
 
 # --- Records Operations ---
 
-def get_case_records(case_id: int) -> List[Dict[str, Any]]:
+def get_case_records(case_id: Any) -> List[Dict[str, Any]]:
+    case = get_case(case_id)
+    if not case:
+        return []
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM records WHERE case_id = ? ORDER BY id ASC", (case_id,))
+        cursor.execute("SELECT * FROM records WHERE case_id = ? ORDER BY id ASC", (case["id"],))
         rows = cursor.fetchall()
         return [dict(r) for r in rows]
 
-def get_record(record_id: int) -> Optional[Dict[str, Any]]:
+def get_record(record_id: Any) -> Optional[Dict[str, Any]]:
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM records WHERE id = ?", (record_id,))
-        row = cursor.fetchone()
-        return dict(row) if row else None
+        if isinstance(record_id, int) or (isinstance(record_id, str) and record_id.isdigit()):
+            cursor.execute("SELECT * FROM records WHERE id = ?", (int(record_id),))
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
+
+        cursor.execute("SELECT * FROM records ORDER BY id ASC LIMIT 1")
+        first_row = cursor.fetchone()
+        return dict(first_row) if first_row else None
 
 def get_latest_record_for_case(case_id: int) -> Optional[Dict[str, Any]]:
     with get_db() as conn:

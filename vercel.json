@@ -1,4 +1,10 @@
 {
+  "version": 2,
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "backend/**,frontend/**,templates/**,static/**,pramaan.db"
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
